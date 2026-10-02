@@ -41,8 +41,14 @@ type Plan = {
 
 async function main() {
   console.log(
-    `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  DRY_RUN=${env.DRY_RUN}`,
+    `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  DRY_RUN=${env.DRY_RUN}  ONLY_CLIENT=${env.ONLY_CLIENT ?? '(all)'}`,
   )
+  const { ONLY_CLIENT } = env
+  if (ONLY_CLIENT)
+    assert(
+      CLIENTS.some(c => sameName(c.xero, ONLY_CLIENT)),
+      `ONLY_CLIENT "${ONLY_CLIENT}" doesn't match any client's Xero name`,
+    )
 
   const time = await getBillableTimeByClientAndProject(period)
   const contacts = await getContacts()
@@ -181,7 +187,8 @@ async function main() {
       )
     }
 
-    if (lines.length) plans.push({ cfg, contact, draft, lines })
+    const selected = !ONLY_CLIENT || sameName(cfg.xero, ONLY_CLIENT)
+    if (lines.length && selected) plans.push({ cfg, contact, draft, lines })
   }
 
   if (errors.length)

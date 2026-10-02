@@ -10,5 +10,6 @@ export const env = z
       .enum(['true', 'false'])
       .default('true')
       .transform(v => v === 'true'),
+    ONLY_CLIENT: z.string().min(1).optional(),
   })
   .parse(process.env)
