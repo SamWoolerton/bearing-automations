@@ -41,12 +41,6 @@ export const CLIENTS: ClientConfig[] = [
   { clockify: ['GoodFinch'], xero: 'GoodFinch', hourlyRate: 110, inNZ: false },
   { clockify: ['HG Leach'], xero: 'HG Leach', hourlyRate: 170, inNZ: true },
   {
-    clockify: ['Health Bank'],
-    xero: 'Health Bank',
-    hourlyRate: 150,
-    inNZ: false,
-  },
-  {
     clockify: ['IT Partners'],
     xero: 'IT Partners',
     hourlyRate: 160,
@@ -107,7 +101,11 @@ export const CLIENTS: ClientConfig[] = [
     inNZ: true,
   },
 ]
-export const SKIP_CLOCKIFY_CLIENTS = ['Bearing', 'Coastal Medical']
+export const SKIP_CLOCKIFY_CLIENTS = [
+  'Bearing',
+  'Coastal Medical',
+  'Health Bank',
+]
 export const INACTIVE_CLOCKIFY_CLIENTS = [
   'EIP',
   'Energy Impact Partners',
