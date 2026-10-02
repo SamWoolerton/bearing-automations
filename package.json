@@ -14,7 +14,8 @@
     "suite": "npm run format && npm run lint:fix && npm run typecheck && npm run lint",
     "hours-to-xero": "tsx --env-file=.env src/scripts/hoursToXero.ts",
     "hours-to-xero:dry": "DRY_RUN=true npm run hours-to-xero",
-    "hours-to-xero:live": "DRY_RUN=false npm run hours-to-xero"
+    "hours-to-xero:live": "DRY_RUN=false npm run hours-to-xero",
+    "list-clients": "tsx --env-file=.env src/scripts/listClients.ts"
   },
   "dependencies": {
     "@bearing-agency/utilities": "^1.0.0",

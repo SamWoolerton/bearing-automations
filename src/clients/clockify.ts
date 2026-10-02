@@ -1,15 +1,36 @@
 import ky from 'ky'
 import z from 'zod'
 
-import { appendResponseBodyToError } from '@/clients/http'
+import { appendResponseBodyToError, getAllPages } from '@/clients/http'
 import { env } from '@/env'
 
-const reportsApi = ky.create({
-  prefix: `https://reports.api.clockify.me/v1/workspaces/${env.CLOCKIFY_WORKSPACE_ID}/`,
+const baseApi = ky.create({
   headers: { 'X-Api-Key': env.CLOCKIFY_API_KEY },
-  retry: { methods: ['post'] },
   hooks: { beforeError: [appendResponseBodyToError] },
 })
+
+const api = baseApi.extend({
+  prefix: `https://api.clockify.me/api/v1/workspaces/${env.CLOCKIFY_WORKSPACE_ID}/`,
+})
+
+const reportsApi = baseApi.extend({
+  prefix: `https://reports.api.clockify.me/v1/workspaces/${env.CLOCKIFY_WORKSPACE_ID}/`,
+  retry: { methods: ['post'] },
+})
+
+const clientSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  archived: z.boolean(),
+})
+
+export function getClients() {
+  return getAllPages(({ page, pageSize }) =>
+    api
+      .get('clients', { searchParams: { page, 'page-size': pageSize } })
+      .json(z.array(clientSchema)),
+  )
+}
 
 const groupSchema = z.object({
   _id: z.string(),

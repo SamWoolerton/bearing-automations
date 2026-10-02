@@ -1,7 +1,7 @@
 import ky from 'ky'
 import z from 'zod'
 
-import { appendResponseBodyToError } from '@/clients/http'
+import { appendResponseBodyToError, getAllPages } from '@/clients/http'
 import { env } from '@/env'
 
 const tokenSchema = z.object({ access_token: z.string().min(1) })
@@ -37,19 +37,6 @@ const api = ky.create({
     beforeError: [appendResponseBodyToError],
   },
 })
-
-const PAGE_SIZE = 100
-
-async function getAllPages<T>(
-  fetchPage: (params: { page: number; pageSize: number }) => Promise<T[]>,
-) {
-  const all: T[] = []
-  for (let page = 1; ; page++) {
-    const items = await fetchPage({ page, pageSize: PAGE_SIZE })
-    all.push(...items)
-    if (items.length < PAGE_SIZE) return all
-  }
-}
 
 const contactSchema = z.object({
   ContactID: z.string(),
