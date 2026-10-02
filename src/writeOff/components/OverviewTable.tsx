@@ -1,4 +1,3 @@
-import { sumBy } from '@bearing-agency/utilities/arrays'
 import { cn } from '@bearing-agency/utilities/classnames'
 
 import { Fragment } from 'react'
@@ -23,7 +22,7 @@ import {
 import { WriteOffCell } from '@/writeOff/components/WriteOffCell'
 import type { OnWriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import type { Overview } from '@/writeOff/overview'
-import { membersIn } from '@/writeOff/overview'
+import { membersIn, memberTally } from '@/writeOff/overview'
 
 const Empty = () => <span className="text-muted-foreground">—</span>
 
@@ -41,14 +40,6 @@ const TallyText = ({
 
 const stickyColumnClass =
   'sticky left-0 z-10 shadow-[1px_0_0_var(--color-border)]'
-
-function sumTallies(tallies: Tally[]) {
-  if (tallies.length === 0) return null
-  return {
-    billableSeconds: sumBy(tallies, t => t.billableSeconds),
-    totalSeconds: sumBy(tallies, t => t.totalSeconds),
-  }
-}
 
 export function OverviewTable({
   clients,
@@ -96,11 +87,7 @@ export function OverviewTable({
                     {client.name}
                   </TableCell>
                   {members.map(m => {
-                    const tally = sumTallies(
-                      client.projects.flatMap(p =>
-                        p.users.filter(u => u.id === m.id),
-                      ),
-                    )
+                    const tally = memberTally(client.projects, m.id)
                     return (
                       <TableCell key={m.id} className={memberCellClass(m.id)}>
                         {tally ? <TallyText tally={tally} /> : <Empty />}

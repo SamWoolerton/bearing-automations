@@ -14,6 +14,7 @@ import type { CellSync, CellSyncs } from '@/writeOff/components/CellSync'
 import { cellKey } from '@/writeOff/components/CellSync'
 import { ChangeLogSheet } from '@/writeOff/components/ChangeLogSheet'
 import { OverviewTable } from '@/writeOff/components/OverviewTable'
+import { SummaryStrip } from '@/writeOff/components/SummaryStrip'
 import type { WriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import { getPriorMonthOverview, getWriteOffLogs } from '@/writeOff/functions'
 
@@ -157,12 +158,18 @@ function WriteOffPage() {
       {overview.clients.length === 0 ? (
         <p className="text-muted-foreground">No time logged this period.</p>
       ) : (
-        <OverviewTable
-          clients={overview.clients}
-          focusMemberId={member}
-          syncs={syncs}
-          onExecuted={handleExecuted}
-        />
+        <>
+          <SummaryStrip
+            clients={overview.clients}
+            focusMember={overview.members.find(m => m.id === member)}
+          />
+          <OverviewTable
+            clients={overview.clients}
+            focusMemberId={member}
+            syncs={syncs}
+            onExecuted={handleExecuted}
+          />
+        </>
       )}
     </div>
   )

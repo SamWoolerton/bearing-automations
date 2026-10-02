@@ -10,6 +10,7 @@ import { compareStringAsc } from '@bearing-agency/utilities/sort'
 
 import type { ClockifyClientProjectUserTime } from '@/clients/clockify'
 import type { Tally } from '@/lib/hours'
+import { sumTallies } from '@/lib/hours'
 
 type Group = { _id: string; name: string; duration: number }
 
@@ -126,6 +127,11 @@ export const buildOverview = (
 
 export const clientsWorkedOnBy = (overview: Overview, userId: string) =>
   overview.filter(c => c.projects.some(p => p.users.some(u => u.id === userId)))
+
+export const memberTally = (
+  projects: Overview[number]['projects'],
+  userId: string,
+) => sumTallies(projects.flatMap(p => p.users.filter(u => u.id === userId)))
 
 export const membersIn = (overview: Overview) =>
   uniqueBy(

@@ -1,3 +1,4 @@
+import { sumBy } from '@bearing-agency/utilities/arrays'
 import { roundTo } from '@bearing-agency/utilities/numbers'
 
 export const MINUTE_SECONDS = 60
@@ -31,6 +32,19 @@ export function formatDuration(seconds: number) {
 }
 
 export type Tally = { billableSeconds: number; totalSeconds: number }
+
+export function sumTallies(tallies: Tally[]) {
+  if (tallies.length === 0) return null
+  return {
+    billableSeconds: sumBy(tallies, t => t.billableSeconds),
+    totalSeconds: sumBy(tallies, t => t.totalSeconds),
+  }
+}
+
+export const billableShareLabel = ({ billableSeconds, totalSeconds }: Tally) =>
+  totalSeconds === 0
+    ? '—'
+    : `${Math.round((100 * billableSeconds) / totalSeconds)}%`
 
 export const tallyLabel = ({ billableSeconds, totalSeconds }: Tally) =>
   billableSeconds === totalSeconds
