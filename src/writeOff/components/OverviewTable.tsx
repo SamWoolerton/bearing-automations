@@ -22,9 +22,20 @@ import { membersIn } from '@/writeOff/overview'
 
 const Empty = () => <span className="text-muted-foreground">—</span>
 
-const TallyText = ({ tally }: { tally: Tally }) => (
-  <span className="px-1 tabular-nums">{tallyLabel(tally)}</span>
+const TallyText = ({
+  tally,
+  className,
+}: {
+  tally: Tally
+  className?: string
+}) => (
+  <span className={cn('px-1.5 tabular-nums', className)}>
+    {tallyLabel(tally)}
+  </span>
 )
+
+const stickyColumnClass =
+  'sticky left-0 z-10 shadow-[1px_0_0_var(--color-border)]'
 
 function sumTallies(tallies: Tally[]) {
   if (tallies.length === 0) return null
@@ -51,10 +62,12 @@ export function OverviewTable({
   return (
     <Card className="py-4">
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client / project</TableHead>
+        <Table containerClassName="max-h-[75vh]">
+          <TableHeader className="sticky top-0 z-20 bg-card shadow-[0_1px_0_var(--color-border)]">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={cn(stickyColumnClass, 'bg-card')}>
+                Client / project
+              </TableHead>
               {members.map(m => (
                 <TableHead key={m.id} className={memberCellClass(m.id)}>
                   {m.name}
@@ -67,7 +80,14 @@ export function OverviewTable({
             {clients.map(client => (
               <Fragment key={client.id}>
                 <TableRow className="border-t-2 bg-surface-page font-semibold hover:bg-surface-page">
-                  <TableCell className="text-base">{client.name}</TableCell>
+                  <TableCell
+                    className={cn(
+                      stickyColumnClass,
+                      'bg-surface-page text-base',
+                    )}
+                  >
+                    {client.name}
+                  </TableCell>
                   {members.map(m => {
                     const tally = sumTallies(
                       client.projects.flatMap(p =>
@@ -86,7 +106,11 @@ export function OverviewTable({
                 </TableRow>
                 {client.projects.map(project => (
                   <TableRow key={project.id}>
-                    <TableCell className="pl-6">{project.name}</TableCell>
+                    <TableCell
+                      className={cn(stickyColumnClass, 'bg-card pl-6')}
+                    >
+                      {project.name}
+                    </TableCell>
                     {members.map(m => {
                       const user = project.users.find(u => u.id === m.id)
                       return (
@@ -94,7 +118,10 @@ export function OverviewTable({
                           {!user ? (
                             <Empty />
                           ) : user.billableSeconds === 0 ? (
-                            <TallyText tally={user} />
+                            <TallyText
+                              tally={user}
+                              className="text-muted-foreground"
+                            />
                           ) : (
                             <WriteOffCell
                               userId={m.id}

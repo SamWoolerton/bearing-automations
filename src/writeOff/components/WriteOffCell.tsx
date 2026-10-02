@@ -1,3 +1,4 @@
+import { PencilIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -51,8 +52,9 @@ export function WriteOffCell({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="cursor-pointer rounded px-1 tabular-nums underline-offset-4 hover:underline"
+          className="group inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 tabular-nums transition-colors outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
         >
+          <PencilIcon className="size-3 opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60 group-data-[state=open]:opacity-60" />
           {tallyLabel(tally)}
         </button>
       </PopoverTrigger>
