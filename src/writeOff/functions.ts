@@ -4,7 +4,10 @@ import { stableStringify } from '@bearing-agency/utilities/objects'
 import { createServerFn } from '@tanstack/react-start'
 import z from 'zod'
 
-import { getDetailedTimeEntries } from '@/clients/clockify'
+import {
+  getDetailedTimeEntries,
+  getTimeByClientProjectAndUser,
+} from '@/clients/clockify'
 import { nowInNZ, priorMonth } from '@/lib/periods'
 import {
   executeWriteOff,
@@ -20,9 +23,11 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
   .validator(z.object({ userId: z.string().optional() }))
   .handler(async ({ data }) => {
     const period = currentPeriod()
-    const overview = buildOverview(
-      await getDetailedTimeEntries({ range: period }),
-    )
+    const [all, billable] = await Promise.all([
+      getTimeByClientProjectAndUser({ range: period }),
+      getTimeByClientProjectAndUser({ range: period, billable: true }),
+    ])
+    const overview = buildOverview(all, billable)
     return {
       period: {
         label: period.label,

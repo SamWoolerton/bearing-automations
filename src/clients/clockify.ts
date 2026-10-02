@@ -37,21 +37,24 @@ export function getClients() {
   )
 }
 
-const groupSchema = z.object({
+const summaryGroupSchema = z.object({
   _id: z.string(),
   name: z.string(),
   duration: z.number().int().nonnegative(),
 })
 
-const clientGroupSchema = groupSchema.extend({
-  children: z.array(groupSchema),
-})
+const withChildren = <T extends z.ZodType>(child: T) =>
+  summaryGroupSchema.extend({ children: z.array(child) })
 
-export type ClockifyClientTime = z.infer<typeof clientGroupSchema>
+const clientProjectSchema = withChildren(summaryGroupSchema)
 
-const summaryReportSchema = z.object({
-  groupOne: z.array(clientGroupSchema),
-})
+export type ClockifyClientTime = z.infer<typeof clientProjectSchema>
+
+const clientProjectUserSchema = withChildren(clientProjectSchema)
+
+export type ClockifyClientProjectUserTime = z.infer<
+  typeof clientProjectUserSchema
+>
 
 // Round 3.5m down and the rest up  to the nearest 15m
 export function roundBillableHours(seconds: number) {
@@ -79,18 +82,50 @@ const containsIds = (ids: string[]) => ({
   status: 'ALL',
 })
 
-export async function getBillableTimeByClientAndProject(range: DateRange) {
+async function getSummary<T extends z.ZodType>({
+  range,
+  groups,
+  groupSchema,
+  billable,
+}: {
+  range: DateRange
+  groups: string[]
+  groupSchema: T
+  billable?: boolean
+}) {
   const report = await reportsApi
     .post('reports/summary', {
       json: {
         ...reportDateRange(range),
-        billable: true,
-        summaryFilter: { groups: ['CLIENT', 'PROJECT'] },
+        billable,
+        summaryFilter: { groups },
       },
     })
-    .json(summaryReportSchema)
+    .json(z.object({ groupOne: z.array(groupSchema) }))
   return report.groupOne
 }
+
+export const getBillableTimeByClientAndProject = (range: DateRange) =>
+  getSummary({
+    range,
+    groups: ['CLIENT', 'PROJECT'],
+    groupSchema: clientProjectSchema,
+    billable: true,
+  })
+
+export const getTimeByClientProjectAndUser = ({
+  range,
+  billable,
+}: {
+  range: DateRange
+  billable?: boolean
+}) =>
+  getSummary({
+    range,
+    groups: ['CLIENT', 'PROJECT', 'USER'],
+    groupSchema: clientProjectUserSchema,
+    billable,
+  })
 
 export const reportTimeEntrySchema = z.object({
   _id: z.string(),
@@ -128,9 +163,9 @@ export async function getDetailedTimeEntries({
           ...reportDateRange(range),
           exportType: 'JSON',
           detailedFilter: { page, pageSize, sortColumn: 'DATE' },
-          ...(userIds && { users: containsIds(userIds) }),
-          ...(projectIds && { projects: containsIds(projectIds) }),
-          ...(billable !== undefined && { billable }),
+          users: userIds && containsIds(userIds),
+          projects: projectIds && containsIds(projectIds),
+          billable,
         },
       })
       .json(z.object({ timeentries: z.array(reportTimeEntrySchema) }))
