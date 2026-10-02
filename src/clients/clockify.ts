@@ -1,12 +1,15 @@
 import { unique } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 
+import { TZDate } from '@date-fns/tz'
+import { format } from 'date-fns'
 import ky from 'ky'
 import z from 'zod'
 
 import { reportTimeEntrySchema } from '@/clients/clockifySchemas'
 import { appendResponseBodyToError, getAllPages } from '@/clients/http'
 import { env } from '@/env'
+import { TZ } from '@/lib/periods'
 
 const baseApi = ky.create({
   headers: { 'X-Api-Key': env.CLOCKIFY_API_KEY },
@@ -59,12 +62,28 @@ export type ClockifyClientProjectUserTime = z.infer<
 
 type DateRange = { start: Date; end: Date }
 
-const toUtcIso = (date: Date) => new Date(date.getTime()).toISOString()
+const userSchema = z.object({ settings: z.object({ timeZone: z.string() }) })
 
-const reportDateRange = ({ start, end }: DateRange) => ({
-  dateRangeStart: toUtcIso(start),
-  dateRangeEnd: toUtcIso(end),
-})
+async function assertProfileTimeZone() {
+  const { settings } = await baseApi
+    .get('https://api.clockify.me/api/v1/user')
+    .json(userSchema)
+  assert(
+    settings.timeZone === TZ,
+    `Clockify reads report dates in the API user's profile time zone, which is ${settings.timeZone} — set it to ${TZ}`,
+  )
+}
+
+const toWallClock = (date: Date) =>
+  format(new TZDate(date, TZ), "yyyy-MM-dd'T'HH:mm:ss.SSS")
+
+async function reportDateRange({ start, end }: DateRange) {
+  await assertProfileTimeZone()
+  return {
+    dateRangeStart: toWallClock(start),
+    dateRangeEnd: toWallClock(end),
+  }
+}
 
 const containsIds = (ids: string[]) => ({
   ids,
@@ -86,7 +105,7 @@ async function getSummary<T extends z.ZodType>({
   const report = await reportsApi
     .post('reports/summary', {
       json: {
-        ...reportDateRange(range),
+        ...(await reportDateRange(range)),
         billable,
         summaryFilter: { groups },
       },
@@ -128,11 +147,12 @@ export async function getDetailedTimeEntries({
   projectIds?: string[]
   billable?: boolean
 }) {
+  const dateRange = await reportDateRange(range)
   const entries = await getAllPages(async ({ page, pageSize }) => {
     const report = await reportsApi
       .post('reports/detailed', {
         json: {
-          ...reportDateRange(range),
+          ...dateRange,
           exportType: 'JSON',
           detailedFilter: { page, pageSize, sortColumn: 'DATE' },
           users: userIds && containsIds(userIds),

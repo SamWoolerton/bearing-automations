@@ -28,7 +28,9 @@ export function formatDuration(seconds: number) {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
   if (minutes === 0) return `${hours}h`
-  return hours === 0 ? `${minutes}m` : `${hours}h${minutes}m`
+  return hours === 0
+    ? `${minutes}m`
+    : `${hours}h${String(minutes).padStart(2, '0')}m`
 }
 
 export type Tally = { billableSeconds: number; totalSeconds: number }
