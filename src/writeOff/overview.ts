@@ -1,11 +1,20 @@
-import { unique, uniqueBy } from '@bearing-agency/utilities/arrays'
+import {
+  partition,
+  sumBy,
+  unique,
+  uniqueBy,
+} from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 import { buildMapBy } from '@bearing-agency/utilities/maps'
 import { compareStringAsc } from '@bearing-agency/utilities/sort'
 
 import type { ClockifyClientProjectUserTime } from '@/clients/clockify'
+import type { Tally } from '@/lib/hours'
 
 type Group = { _id: string; name: string; duration: number }
+
+const byName = (a: { name: string }, b: { name: string }) =>
+  compareStringAsc(a.name, b.name)
 
 function assertUniqueIds(groups: Group[]) {
   const ids = groups.map(g => g._id)
@@ -46,10 +55,10 @@ function mergeBillable<G extends Group, R>(
         ...describe(group, billableGroup),
       }
     })
-    .toSorted((a, b) => compareStringAsc(a.name, b.name))
+    .toSorted(byName)
 }
 
-export const buildOverview = (
+const mergeOverview = (
   all: ClockifyClientProjectUserTime[],
   billable: ClockifyClientProjectUserTime[],
 ) =>
@@ -67,7 +76,53 @@ export const buildOverview = (
     ),
   }))
 
-export type Overview = ReturnType<typeof buildOverview>
+export type Overview = ReturnType<typeof mergeOverview>
+
+const NO_CLIENT = ''
+const INTERNAL_PROJECT = 'Internal'
+const BEARING_CLIENT = 'Bearing'
+
+const shiftTally = <T extends Tally>(tally: T, by: Tally, sign: 1 | -1) => ({
+  ...tally,
+  billableSeconds: tally.billableSeconds + sign * by.billableSeconds,
+  totalSeconds: tally.totalSeconds + sign * by.totalSeconds,
+})
+
+function reclassifyInternalTime(overview: Overview) {
+  const noClient = overview.find(c => c.name === NO_CLIENT)
+  const [internal, others] = partition(
+    noClient?.projects ?? [],
+    p => p.name === INTERNAL_PROJECT,
+  )
+  if (!noClient || internal.length === 0) return overview
+
+  const moved = {
+    billableSeconds: sumBy(internal, p => p.billableSeconds),
+    totalSeconds: sumBy(internal, p => p.totalSeconds),
+  }
+  const bearing = overview.find(c => c.name === BEARING_CLIENT) ?? {
+    id: BEARING_CLIENT,
+    name: BEARING_CLIENT,
+    billableSeconds: 0,
+    totalSeconds: 0,
+    projects: [],
+  }
+  return [
+    ...overview.filter(c => c !== noClient && c !== bearing),
+    {
+      ...shiftTally(bearing, moved, 1),
+      projects: [...bearing.projects, ...internal].toSorted(byName),
+    },
+    ...(others.length > 0
+      ? [{ ...shiftTally(noClient, moved, -1), projects: others }]
+      : []),
+  ].toSorted(byName)
+}
+
+export const buildOverview = (
+  all: ClockifyClientProjectUserTime[],
+  billable: ClockifyClientProjectUserTime[],
+) => reclassifyInternalTime(mergeOverview(all, billable))
 
 export const clientsWorkedOnBy = (overview: Overview, userId: string) =>
   overview.filter(c => c.projects.some(p => p.users.some(u => u.id === userId)))
@@ -78,4 +133,4 @@ export const membersIn = (overview: Overview) =>
     u => u.id,
   )
     .map(({ id, name }) => ({ id, name }))
-    .toSorted((a, b) => compareStringAsc(a.name, b.name))
+    .toSorted(byName)
