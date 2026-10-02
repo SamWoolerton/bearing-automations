@@ -1,6 +1,6 @@
 import { assert } from '@bearing-agency/utilities/assertions'
 
-import { format } from 'date-fns'
+import { format, getDate } from 'date-fns'
 
 import type { ClientConfig, ClockifyClientConfig } from '@/billing/clientConfig'
 import {
@@ -29,7 +29,10 @@ const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
 const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATED'
 
-const period = priorMonth(nowInNZ())
+const LAST_SYNC_DAY_OF_MONTH = 10
+
+const now = nowInNZ()
+const period = priorMonth(now)
 
 type Plan = {
   cfg: ClientConfig
@@ -39,6 +42,12 @@ type Plan = {
 }
 
 async function main() {
+  const day = getDate(now)
+  assert(
+    day <= LAST_SYNC_DAY_OF_MONTH,
+    `Today is day ${day} of the month — only sync on days 1 to ${LAST_SYNC_DAY_OF_MONTH}`,
+  )
+
   console.log(
     `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  DRY_RUN=${env.DRY_RUN}  ONLY_CLIENT=${env.ONLY_CLIENT ?? '(all)'}`,
   )
