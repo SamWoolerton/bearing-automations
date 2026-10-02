@@ -121,6 +121,12 @@ async function main() {
       continue
     }
     const draft = clientDrafts.at(0)
+    if (draft && draft.CurrencyCode !== cfg.currency) {
+      errors.push(
+        `"${cfg.xero}" draft is in ${draft.CurrencyCode} but config says ${cfg.currency}`,
+      )
+      continue
+    }
 
     const projects: { description: string; seconds: number }[] = []
     for (const { client, prefixProjectWithClient } of clients) {

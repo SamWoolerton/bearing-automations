@@ -77,6 +77,7 @@ const invoiceSchema = z.object({
   InvoiceID: z.string(),
   InvoiceNumber: z.string().optional(),
   Contact: z.object({ ContactID: z.string() }),
+  CurrencyCode: z.string(),
   LineItems: z.array(lineItemSchema),
 })
 
