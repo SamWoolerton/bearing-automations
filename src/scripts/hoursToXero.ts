@@ -1,8 +1,10 @@
+import { unique } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 
 import { TZDate } from '@date-fns/tz'
 import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns'
 
+import type { ClockifyClientTime } from '@/clients/clockify'
 import {
   getBillableTimeByClientAndProject,
   roundBillableHours,
@@ -17,7 +19,7 @@ import {
 import { env } from '@/env'
 
 type ClientConfig = {
-  clockify: string
+  clockify: string[]
   xero: string
   hourlyRate: number
   inNZ: boolean
@@ -26,14 +28,14 @@ type ClientConfig = {
 
 const CLIENTS: ClientConfig[] = [
   {
-    clockify: 'Acme',
+    clockify: ['Acme'],
     xero: 'Acme Limited',
     hourlyRate: 150,
     inNZ: true,
     poNumber: 'PO-12345',
   },
   {
-    clockify: 'Globex',
+    clockify: ['Globex'],
     xero: 'Globex Corporation',
     hourlyRate: 175,
     inNZ: false,
@@ -46,8 +48,22 @@ const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
 const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATEDOUTPUT'
 const TZ = 'Pacific/Auckland'
 
-const sameName = (a: string, b: string) =>
-  a.trim().toLowerCase() === b.trim().toLowerCase()
+const normaliseName = (name: string) => name.trim().toLowerCase()
+const sameName = (a: string, b: string) => normaliseName(a) === normaliseName(b)
+
+const assertNoDuplicateNames = (names: string[], label: string) =>
+  assert(
+    unique(names.map(normaliseName)).length === names.length,
+    `Duplicate ${label} name in config`,
+  )
+assertNoDuplicateNames(
+  [...CLIENTS.flatMap(c => c.clockify), ...SKIP_CLOCKIFY_CLIENTS],
+  'Clockify client',
+)
+assertNoDuplicateNames(
+  CLIENTS.map(c => c.xero),
+  'Xero contact',
+)
 
 const now = TZDate.tz(TZ)
 const lastMonth = subMonths(now, 1)
@@ -86,18 +102,26 @@ async function main() {
     else contactFor.set(cfg, matches[0])
   }
 
-  const plans: Plan[] = []
+  const timeFor = new Map<ClientConfig, ClockifyClientTime[]>()
 
   for (const client of time) {
     if (SKIP_CLOCKIFY_CLIENTS.some(s => sameName(s, client.name))) continue
 
-    const cfg = CLIENTS.find(c => sameName(c.clockify, client.name))
+    const cfg = CLIENTS.find(c =>
+      c.clockify.some(name => sameName(name, client.name)),
+    )
     if (!cfg) {
       errors.push(
         `Clockify client "${client.name || '(no client)'}" not in config or skip list`,
       )
       continue
     }
+    timeFor.set(cfg, [...(timeFor.get(cfg) ?? []), client])
+  }
+
+  const plans: Plan[] = []
+
+  for (const [cfg, clients] of timeFor) {
     const contact = contactFor.get(cfg)
     if (!contact) continue
 
@@ -113,40 +137,50 @@ async function main() {
     const draft = clientDrafts.at(0)
 
     const lines: XeroNewLineItem[] = []
-    for (const project of client.children) {
-      const hours = roundBillableHours(project.duration)
-      if (hours === 0) continue
+    const seenDescriptions = new Set<string>()
+    for (const client of clients)
+      for (const project of client.children) {
+        const hours = roundBillableHours(project.duration)
+        if (hours === 0) continue
 
-      if (!project.name)
-        errors.push(`"${client.name}" has a project without a name`)
+        if (!project.name)
+          errors.push(`"${client.name}" has a project without a name`)
 
-      const line: XeroNewLineItem = {
-        Description: project.name,
-        Quantity: hours,
-        UnitAmount: cfg.hourlyRate,
-        AccountCode: SALES_ACCOUNT_CODE,
-        TaxType: cfg.inNZ
-          ? NZ_GST_ON_INCOME_TAX_TYPE
-          : ZERO_RATED_INCOME_TAX_TYPE,
+        if (seenDescriptions.has(normaliseName(project.name))) {
+          errors.push(
+            `"${cfg.xero}" has multiple Clockify projects named "${project.name}"`,
+          )
+          continue
+        }
+        seenDescriptions.add(normaliseName(project.name))
+
+        const line: XeroNewLineItem = {
+          Description: project.name,
+          Quantity: hours,
+          UnitAmount: cfg.hourlyRate,
+          AccountCode: SALES_ACCOUNT_CODE,
+          TaxType: cfg.inNZ
+            ? NZ_GST_ON_INCOME_TAX_TYPE
+            : ZERO_RATED_INCOME_TAX_TYPE,
+        }
+
+        const existing = (draft?.LineItems ?? []).filter(e =>
+          sameName(e.Description, line.Description),
+        )
+        assert(
+          existing.length <= 1,
+          `"${cfg.xero}" draft has ${existing.length} lines for "${line.Description}"`,
+        )
+        if (existing.length === 0) {
+          lines.push(line)
+          continue
+        }
+        const [{ Quantity, UnitAmount }] = existing
+        assert(
+          Quantity === line.Quantity && UnitAmount === line.UnitAmount,
+          `"${cfg.xero}" draft line "${line.Description}" is ${Quantity}h × $${UnitAmount} but Clockify says ${line.Quantity}h × $${line.UnitAmount}`,
+        )
       }
-
-      const existing = (draft?.LineItems ?? []).filter(e =>
-        sameName(e.Description, line.Description),
-      )
-      assert(
-        existing.length <= 1,
-        `"${cfg.xero}" draft has ${existing.length} lines for "${line.Description}"`,
-      )
-      if (existing.length === 0) {
-        lines.push(line)
-        continue
-      }
-      const [{ Quantity, UnitAmount }] = existing
-      assert(
-        Quantity === line.Quantity && UnitAmount === line.UnitAmount,
-        `"${cfg.xero}" draft line "${line.Description}" is ${Quantity}h × $${UnitAmount} but Clockify says ${line.Quantity}h × $${line.UnitAmount}`,
-      )
-    }
 
     if (lines.length) plans.push({ cfg, contact, draft, lines })
   }

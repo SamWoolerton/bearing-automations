@@ -17,3 +17,5 @@ Let the snapshots auto-fill, no need to provide those values yourself.
 Don't write comments, unless they're critically necessary. In 99% of cases they're not so don't add anything as it's clear from the code already!
 
 Annotate function arguments but rarely the return types as they're normally inferred.
+
+`npm run suite` formats, type-checks, and lints in one go.

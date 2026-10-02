@@ -42,6 +42,8 @@ const clientGroupSchema = groupSchema.extend({
   children: z.array(groupSchema),
 })
 
+export type ClockifyClientTime = z.infer<typeof clientGroupSchema>
+
 const summaryReportSchema = z.object({
   groupOne: z.array(clientGroupSchema),
 })
