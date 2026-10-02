@@ -11,7 +11,7 @@ import {
   getTimeByClientProjectAndUser,
 } from '@/clients/clockify'
 import { formatHours, isQuarterHourMultiple } from '@/lib/hours'
-import { nowInNZ, priorMonth } from '@/lib/periods'
+import { nowInNZ, priorMonth, selectableMonths } from '@/lib/periods'
 import {
   executeWriteOff,
   listChangeLogs,
@@ -24,12 +24,20 @@ import {
 } from '@/writeOff/overview'
 import { planWriteOff, writeOffPlanSchema } from '@/writeOff/plan'
 
-const currentPeriod = () => priorMonth(nowInNZ())
+function selectablePeriod(month: string) {
+  const period = selectableMonths(nowInNZ()).find(p => p.key === month)
+  assert(period, `${month} isn't a month you can review`)
+  return period
+}
 
-export const getPriorMonthOverview = createServerFn({ method: 'GET' })
-  .validator(z.object({ userId: z.string().optional() }))
+export const getMonthOverview = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({ userId: z.string().optional(), month: z.string().optional() }),
+  )
   .handler(async ({ data }) => {
-    const period = currentPeriod()
+    const period = data.month
+      ? selectablePeriod(data.month)
+      : priorMonth(nowInNZ())
     const [all, billable] = await Promise.all([
       getTimeByClientProjectAndUser({ range: period }),
       getTimeByClientProjectAndUser({ range: period, billable: true }),
@@ -37,6 +45,7 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
     const overview = withHourlyRates(buildOverview(all, billable))
     return {
       period: {
+        key: period.key,
         label: period.label,
         start: period.start.toISOString(),
         end: period.end.toISOString(),
@@ -49,6 +58,7 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
   })
 
 const writeOffRequestSchema = z.object({
+  month: z.string(),
   userId: z.string(),
   projectId: z.string(),
   targetBillableSeconds: z
@@ -61,12 +71,13 @@ const writeOffRequestSchema = z.object({
 export type WriteOffRequest = z.infer<typeof writeOffRequestSchema>
 
 async function planFor({
+  month,
   userId,
   projectId,
   targetBillableSeconds,
 }: WriteOffRequest) {
   const entries = await getDetailedTimeEntries({
-    range: currentPeriod(),
+    range: selectablePeriod(month),
     userIds: [userId],
     projectIds: [projectId],
     billable: true,

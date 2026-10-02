@@ -22,10 +22,10 @@ import {
 } from '@/writeOff/components/PageStates'
 import { SummaryStrip } from '@/writeOff/components/SummaryStrip'
 import type { WriteOffExecuted } from '@/writeOff/components/WriteOffCell'
-import { getPriorMonthOverview, getWriteOffLogs } from '@/writeOff/functions'
+import { getMonthOverview, getWriteOffLogs } from '@/writeOff/functions'
 
-const loadOverview = (member: string | undefined) =>
-  getPriorMonthOverview({ data: { userId: member } })
+const loadOverview = (member: string | undefined, month?: string) =>
+  getMonthOverview({ data: { userId: member, month } })
 
 export const Route = createFileRoute('/')({
   validateSearch: z.object({ member: z.string().optional() }),
@@ -51,11 +51,11 @@ async function verifyReport(
   member: string | undefined,
   { request, totalSeconds }: WriteOffExecuted,
 ): Promise<CellSync | null> {
-  const { userId, projectId, targetBillableSeconds } = request
+  const { month, userId, projectId, targetBillableSeconds } = request
   let reported: Tally | undefined
   for (let attempt = 0; attempt < REPORT_POLL_ATTEMPTS; attempt++) {
     await wait(REPORT_POLL_INTERVAL_MS)
-    const { clients } = await loadOverview(member)
+    const { clients } = await loadOverview(member, month)
     reported = clients
       .flatMap(c => c.projects)
       .find(p => p.id === projectId)
@@ -176,6 +176,7 @@ function WriteOffPage() {
             focusMember={overview.members.find(m => m.id === member)}
           />
           <OverviewTable
+            month={overview.period.key}
             clients={overview.clients}
             focusMemberId={member}
             syncs={syncs}

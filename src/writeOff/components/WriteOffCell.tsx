@@ -34,6 +34,7 @@ export type WriteOffExecuted = {
 export type OnWriteOffExecuted = (executed: WriteOffExecuted) => void
 
 type WriteOffCellProps = {
+  month: string
   userId: string
   userName: string
   projectId: string
@@ -97,6 +98,7 @@ function targetError(target: number | null, billableSeconds: number) {
 type Prepared = { request: WriteOffRequest; plan: WriteOffPlan }
 
 function WriteOffForm({
+  month,
   userId,
   userName,
   projectId,
@@ -133,7 +135,7 @@ function WriteOffForm({
 
   const prepare = (targetBillableSeconds: number) =>
     run(async () => {
-      const request = { userId, projectId, targetBillableSeconds }
+      const request = { month, userId, projectId, targetBillableSeconds }
       setPrepared({ request, plan: await prepareWriteOff({ data: request }) })
     })
 

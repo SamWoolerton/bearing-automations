@@ -45,11 +45,13 @@ const stickyColumnClass =
   'sticky left-0 z-10 shadow-[1px_0_0_var(--color-border)]'
 
 export function OverviewTable({
+  month,
   clients,
   focusMemberId,
   syncs,
   onExecuted,
 }: {
+  month: string
   clients: Overview
   focusMemberId: string | undefined
   syncs: CellSyncs
@@ -165,6 +167,7 @@ export function OverviewTable({
                                 />
                               ) : (
                                 <WriteOffCell
+                                  month={month}
                                   userId={m.id}
                                   userName={m.name}
                                   projectId={project.id}
