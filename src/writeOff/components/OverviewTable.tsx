@@ -1,7 +1,10 @@
 import { cn } from '@bearing-agency/utilities/classnames'
+import { setToggle } from '@bearing-agency/utilities/sets'
 
-import { Fragment } from 'react'
+import { ChevronRightIcon } from 'lucide-react'
+import { Fragment, useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
@@ -52,6 +55,8 @@ export function OverviewTable({
   syncs: CellSyncs
   onExecuted: OnWriteOffExecuted
 }) {
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const allCollapsed = clients.every(c => collapsed.has(c.id))
   const members = membersIn(clients)
   const memberCellClass = (memberId: string) =>
     cn('text-right', memberId === focusMemberId && 'bg-primary/5')
@@ -65,6 +70,20 @@ export function OverviewTable({
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(stickyColumnClass, 'bg-card')}>
                 Client / project
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 h-6 px-2 text-xs text-muted-foreground"
+                  onClick={() =>
+                    setCollapsed(
+                      allCollapsed
+                        ? new Set()
+                        : new Set(clients.map(c => c.id)),
+                    )
+                  }
+                >
+                  {allCollapsed ? 'Expand all' : 'Collapse all'}
+                </Button>
               </TableHead>
               {members.map(m => (
                 <TableHead key={m.id} className={memberCellClass(m.id)}>
@@ -77,14 +96,27 @@ export function OverviewTable({
           <TableBody>
             {clients.map(client => (
               <Fragment key={client.id}>
-                <TableRow className="border-t-2 bg-surface-page font-semibold hover:bg-surface-page">
+                <TableRow className="border-t-2 bg-surface-page font-semibold hover:bg-surface-page has-aria-expanded:bg-surface-page">
                   <TableCell
                     className={cn(
                       stickyColumnClass,
                       'bg-surface-page text-base',
                     )}
                   >
-                    {client.name}
+                    <button
+                      type="button"
+                      aria-expanded={!collapsed.has(client.id)}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      onClick={() => setCollapsed(c => setToggle(c, client.id))}
+                    >
+                      <ChevronRightIcon
+                        className={cn(
+                          'size-4 text-muted-foreground transition-transform',
+                          !collapsed.has(client.id) && 'rotate-90',
+                        )}
+                      />
+                      {client.name}
+                    </button>
                   </TableCell>
                   {members.map(m => {
                     const tally = memberTally(client.projects, m.id)
@@ -98,52 +130,55 @@ export function OverviewTable({
                     <TallyText tally={client} />
                   </TableCell>
                 </TableRow>
-                {client.projects.map(project => (
-                  <TableRow key={project.id}>
-                    <TableCell
-                      className={cn(stickyColumnClass, 'bg-card pl-6')}
-                    >
-                      {project.name}
-                    </TableCell>
-                    {members.map(m => {
-                      const user = project.users.find(u => u.id === m.id)
-                      const sync = syncs.get(cellKey(project.id, m.id))
-                      return (
-                        <TableCell
-                          key={m.id}
-                          className={cn(
-                            memberCellClass(m.id),
-                            cellSyncClass(sync),
-                          )}
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            {sync && <CellSyncIndicator sync={sync} />}
-                            {!user ? (
-                              <Empty />
-                            ) : user.billableSeconds === 0 ? (
-                              <TallyText
-                                tally={user}
-                                className={cn(!sync && 'text-muted-foreground')}
-                              />
-                            ) : (
-                              <WriteOffCell
-                                userId={m.id}
-                                userName={m.name}
-                                projectId={project.id}
-                                projectName={`${client.name} / ${project.name}`}
-                                tally={user}
-                                onExecuted={onExecuted}
-                              />
+                {!collapsed.has(client.id) &&
+                  client.projects.map(project => (
+                    <TableRow key={project.id}>
+                      <TableCell
+                        className={cn(stickyColumnClass, 'bg-card pl-6')}
+                      >
+                        {project.name}
+                      </TableCell>
+                      {members.map(m => {
+                        const user = project.users.find(u => u.id === m.id)
+                        const sync = syncs.get(cellKey(project.id, m.id))
+                        return (
+                          <TableCell
+                            key={m.id}
+                            className={cn(
+                              memberCellClass(m.id),
+                              cellSyncClass(sync),
                             )}
-                          </span>
-                        </TableCell>
-                      )
-                    })}
-                    <TableCell className={cn(totalCellClass, 'font-medium')}>
-                      <TallyText tally={project} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              {sync && <CellSyncIndicator sync={sync} />}
+                              {!user ? (
+                                <Empty />
+                              ) : user.billableSeconds === 0 ? (
+                                <TallyText
+                                  tally={user}
+                                  className={cn(
+                                    !sync && 'text-muted-foreground',
+                                  )}
+                                />
+                              ) : (
+                                <WriteOffCell
+                                  userId={m.id}
+                                  userName={m.name}
+                                  projectId={project.id}
+                                  projectName={`${client.name} / ${project.name}`}
+                                  tally={user}
+                                  onExecuted={onExecuted}
+                                />
+                              )}
+                            </span>
+                          </TableCell>
+                        )
+                      })}
+                      <TableCell className={cn(totalCellClass, 'font-medium')}>
+                        <TallyText tally={project} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </Fragment>
             ))}
           </TableBody>
