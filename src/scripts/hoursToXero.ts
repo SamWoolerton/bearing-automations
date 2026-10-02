@@ -1,8 +1,7 @@
 import { unique } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 
-import { TZDate } from '@date-fns/tz'
-import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns'
+import { format } from 'date-fns'
 
 import type { ClockifyClientTime } from '@/clients/clockify'
 import {
@@ -17,6 +16,7 @@ import {
   replaceInvoiceLineItems,
 } from '@/clients/xero'
 import { env } from '@/env'
+import { nowInNZ, priorMonth } from '@/lib/periods'
 
 type ClockifyClientConfig = {
   name: string
@@ -130,7 +130,6 @@ const DUPLICATE_PROJECT_SUFFIX = /\s+(?:2|copy)$/i
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
 const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATEDOUTPUT'
-const TZ = 'Pacific/Auckland'
 
 const normaliseName = (name: string) => name.trim().toLowerCase()
 const sameName = (a: string, b: string) => normaliseName(a) === normaliseName(b)
@@ -162,11 +161,8 @@ assertNoDuplicateNames(
   'Xero contact',
 )
 
-const now = TZDate.tz(TZ)
-const lastMonth = subMonths(now, 1)
-const periodStart = startOfMonth(lastMonth)
-const periodEnd = endOfMonth(lastMonth)
-const periodLabel = format(periodStart, 'MMMM yyyy')
+const now = nowInNZ()
+const period = priorMonth(now)
 
 type Plan = {
   cfg: ClientConfig
@@ -177,13 +173,10 @@ type Plan = {
 
 async function main() {
   console.log(
-    `Period: ${periodLabel} (${periodStart.toISOString()} → ${periodEnd.toISOString()})  DRY_RUN=${env.DRY_RUN}`,
+    `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  DRY_RUN=${env.DRY_RUN}`,
   )
 
-  const time = await getBillableTimeByClientAndProject({
-    start: periodStart,
-    end: periodEnd,
-  })
+  const time = await getBillableTimeByClientAndProject(period)
   const contacts = await getContacts()
   const drafts = await getDraftSalesInvoices()
 
