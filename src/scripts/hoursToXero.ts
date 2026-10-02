@@ -47,6 +47,7 @@ const CLIENTS: ClientConfig[] = [
   },
 ]
 const SKIP_CLOCKIFY_CLIENTS = ['Fixed Price Client']
+const INACTIVE_CLOCKIFY_CLIENTS = ['EIP', 'Energy Impact Partners']
 
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
@@ -55,6 +56,8 @@ const TZ = 'Pacific/Auckland'
 
 const normaliseName = (name: string) => name.trim().toLowerCase()
 const sameName = (a: string, b: string) => normaliseName(a) === normaliseName(b)
+const includesName = (names: string[], name: string) =>
+  names.some(n => sameName(n, name))
 
 const CLOCKIFY_MAPPINGS = CLIENTS.flatMap(cfg =>
   cfg.clockify.map(c => ({
@@ -69,7 +72,11 @@ const assertNoDuplicateNames = (names: string[], label: string) =>
     `Duplicate ${label} name in config`,
   )
 assertNoDuplicateNames(
-  [...CLOCKIFY_MAPPINGS.map(m => m.name), ...SKIP_CLOCKIFY_CLIENTS],
+  [
+    ...CLOCKIFY_MAPPINGS.map(m => m.name),
+    ...SKIP_CLOCKIFY_CLIENTS,
+    ...INACTIVE_CLOCKIFY_CLIENTS,
+  ],
   'Clockify client',
 )
 assertNoDuplicateNames(
@@ -123,7 +130,13 @@ async function main() {
   >()
 
   for (const client of time) {
-    if (SKIP_CLOCKIFY_CLIENTS.some(s => sameName(s, client.name))) continue
+    if (includesName(SKIP_CLOCKIFY_CLIENTS, client.name)) continue
+    if (includesName(INACTIVE_CLOCKIFY_CLIENTS, client.name)) {
+      console.warn(
+        `⚠ Inactive Clockify client "${client.name}" has ${(client.duration / 3600).toFixed(2)}h billable — not invoiced, check for misclassified time`,
+      )
+      continue
+    }
 
     const mapping = CLOCKIFY_MAPPINGS.find(m => sameName(m.name, client.name))
     if (!mapping) {
