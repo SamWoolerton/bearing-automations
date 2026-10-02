@@ -7,8 +7,8 @@ import {
 
 import z from 'zod'
 
-import type { ClockifyReportTimeEntry } from '@/clients/clockify'
-import { reportTimeEntrySchema } from '@/clients/clockify'
+import type { ClockifyReportTimeEntry } from '@/clients/clockifySchemas'
+import { reportTimeEntrySchema } from '@/clients/clockifySchemas'
 
 const seconds = z.number().int().nonnegative()
 

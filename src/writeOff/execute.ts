@@ -5,10 +5,7 @@ import { oxfordAnd } from '@bearing-agency/utilities/strings'
 
 import z from 'zod'
 
-import type {
-  ClockifyReportTimeEntry,
-  ClockifyTimeEntry,
-} from '@/clients/clockify'
+import type { ClockifyTimeEntry } from '@/clients/clockify'
 import {
   createTimeEntryForUser,
   deleteTimeEntry,
@@ -17,6 +14,7 @@ import {
   toTimeEntryInput,
   updateTimeEntry,
 } from '@/clients/clockify'
+import type { ClockifyReportTimeEntry } from '@/clients/clockifySchemas'
 import { errorMessage } from '@/lib/errors'
 import type { WriteOffPlan } from '@/writeOff/plan'
 import { writeOffPlanSchema } from '@/writeOff/plan'

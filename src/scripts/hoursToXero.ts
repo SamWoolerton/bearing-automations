@@ -4,10 +4,7 @@ import { assert } from '@bearing-agency/utilities/assertions'
 import { format } from 'date-fns'
 
 import type { ClockifyClientTime } from '@/clients/clockify'
-import {
-  getBillableTimeByClientAndProject,
-  roundBillableHours,
-} from '@/clients/clockify'
+import { getBillableTimeByClientAndProject } from '@/clients/clockify'
 import type { XeroContact, XeroInvoice, XeroNewLineItem } from '@/clients/xero'
 import {
   createDraftSalesInvoice,
@@ -16,6 +13,7 @@ import {
   replaceInvoiceLineItems,
 } from '@/clients/xero'
 import { env } from '@/env'
+import { formatHours, roundBillableHours } from '@/lib/hours'
 import { nowInNZ, priorMonth } from '@/lib/periods'
 
 type ClockifyClientConfig = {
@@ -204,7 +202,7 @@ async function main() {
     if (includesName(SKIP_CLOCKIFY_CLIENTS, client.name)) continue
     if (includesName(INACTIVE_CLOCKIFY_CLIENTS, client.name)) {
       console.warn(
-        `⚠ Inactive Clockify client "${client.name}" has ${(client.duration / 3600).toFixed(2)}h billable — not invoiced, check for misclassified time`,
+        `⚠ Inactive Clockify client "${client.name}" has ${formatHours(client.duration)}h billable — not invoiced, check for misclassified time`,
       )
       continue
     }

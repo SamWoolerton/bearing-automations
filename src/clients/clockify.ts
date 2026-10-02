@@ -4,6 +4,7 @@ import { assert } from '@bearing-agency/utilities/assertions'
 import ky from 'ky'
 import z from 'zod'
 
+import { reportTimeEntrySchema } from '@/clients/clockifySchemas'
 import { appendResponseBodyToError, getAllPages } from '@/clients/http'
 import { env } from '@/env'
 
@@ -55,19 +56,6 @@ const clientProjectUserSchema = withChildren(clientProjectSchema)
 export type ClockifyClientProjectUserTime = z.infer<
   typeof clientProjectUserSchema
 >
-
-// Round 3.5m down and the rest up  to the nearest 15m
-export function roundBillableHours(seconds: number) {
-  const block = 15 * 60
-  const over = seconds % block
-  const rounded =
-    over === 0
-      ? seconds
-      : over <= 3.5 * 60
-        ? seconds - over
-        : seconds - over + block
-  return rounded / 3600
-}
 
 type DateRange = { start: Date; end: Date }
 
@@ -128,24 +116,6 @@ export const getTimeByClientProjectAndUser = ({
     groupSchema: clientProjectUserSchema,
     billable,
   })
-
-export const reportTimeEntrySchema = z.object({
-  _id: z.string(),
-  userId: z.string(),
-  userName: z.string(),
-  clientId: z.string().nullish(),
-  clientName: z.string().nullish(),
-  projectId: z.string().nullish(),
-  projectName: z.string().nullish(),
-  billable: z.boolean(),
-  timeInterval: z.object({
-    start: z.iso.datetime({ offset: true }),
-    end: z.iso.datetime({ offset: true }),
-    duration: z.number().int().nonnegative(),
-  }),
-})
-
-export type ClockifyReportTimeEntry = z.infer<typeof reportTimeEntrySchema>
 
 export async function getDetailedTimeEntries({
   range,
