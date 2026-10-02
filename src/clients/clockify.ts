@@ -161,15 +161,17 @@ const timeEntrySchema = z.object({
 
 export type ClockifyTimeEntry = z.infer<typeof timeEntrySchema>
 
-export type ClockifyTimeEntryInput = {
-  start: string
-  end: string
-  billable: boolean
-  description: string
-  projectId?: string
-  taskId?: string
-  tagIds?: string[]
-}
+export const timeEntryInputSchema = z.object({
+  start: z.iso.datetime(),
+  end: z.iso.datetime(),
+  billable: z.boolean(),
+  description: z.string(),
+  projectId: z.string().optional(),
+  taskId: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
+})
+
+export type ClockifyTimeEntryInput = z.infer<typeof timeEntryInputSchema>
 
 export const toTimeEntryInput = (entry: ClockifyTimeEntry) => ({
   start: entry.timeInterval.start,
