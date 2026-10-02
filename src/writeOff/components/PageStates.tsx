@@ -17,7 +17,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { errorMessage } from '@/lib/errors'
 
-export const PAGE_TITLE = 'Write-offs'
+export const PAGE_TITLE = 'Billable hours breakdown'
 
 const SKELETON_TILES = 4
 const SKELETON_ROWS = 8
