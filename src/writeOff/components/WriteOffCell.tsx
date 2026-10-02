@@ -16,10 +16,10 @@ import {
   formatHours,
   isQuarterHourMultiple,
   QUARTER_HOUR_SECONDS,
-  tallyLabel,
 } from '@/lib/hours'
 import type { Tally } from '@/lib/hours'
 import { entriesLabel } from '@/writeOff/components/labels'
+import { TallyDisplay } from '@/writeOff/components/TallyDisplay'
 import type { ChangeLog } from '@/writeOff/execute'
 import type { WriteOffRequest } from '@/writeOff/functions'
 import { confirmWriteOff, prepareWriteOff } from '@/writeOff/functions'
@@ -63,7 +63,7 @@ export function WriteOffCell({
           className="group inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 tabular-nums transition-colors outline-none hover:bg-accent hover:text-accent-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
         >
           <PencilIcon className="size-3 opacity-0 transition-opacity group-hover:opacity-60 group-focus-visible:opacity-60 group-data-[state=open]:opacity-60" />
-          {tallyLabel(tally)}
+          <TallyDisplay tally={tally} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80">

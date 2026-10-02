@@ -12,13 +12,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { Tally } from '@/lib/hours'
-import { tallyLabel } from '@/lib/hours'
 import type { CellSyncs } from '@/writeOff/components/CellSync'
 import {
   cellKey,
   cellSyncClass,
   CellSyncIndicator,
 } from '@/writeOff/components/CellSync'
+import { TallyDisplay } from '@/writeOff/components/TallyDisplay'
 import { WriteOffCell } from '@/writeOff/components/WriteOffCell'
 import type { OnWriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import type { Overview } from '@/writeOff/overview'
@@ -33,8 +33,8 @@ const TallyText = ({
   tally: Tally
   className?: string
 }) => (
-  <span className={cn('px-1.5 tabular-nums', className)}>
-    {tallyLabel(tally)}
+  <span className={cn('inline-flex px-1.5', className)}>
+    <TallyDisplay tally={tally} />
   </span>
 )
 

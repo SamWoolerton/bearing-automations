@@ -45,8 +45,3 @@ export const billableShareLabel = ({ billableSeconds, totalSeconds }: Tally) =>
   totalSeconds === 0
     ? '—'
     : `${Math.round((100 * billableSeconds) / totalSeconds)}%`
-
-export const tallyLabel = ({ billableSeconds, totalSeconds }: Tally) =>
-  billableSeconds === totalSeconds
-    ? formatDuration(totalSeconds)
-    : `${formatDuration(billableSeconds)}/${formatDuration(totalSeconds)}`
