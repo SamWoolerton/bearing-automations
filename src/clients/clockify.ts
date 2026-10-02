@@ -92,7 +92,7 @@ export async function getBillableTimeByClientAndProject(range: DateRange) {
   return report.groupOne
 }
 
-const reportTimeEntrySchema = z.object({
+export const reportTimeEntrySchema = z.object({
   _id: z.string(),
   userId: z.string(),
   userName: z.string(),

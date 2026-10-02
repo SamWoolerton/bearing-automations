@@ -1,5 +1,6 @@
 import { zip } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
+import { compareStringAsc } from '@bearing-agency/utilities/sort'
 import { oxfordAnd } from '@bearing-agency/utilities/strings'
 
 import z from 'zod'
@@ -17,9 +18,10 @@ import {
   updateTimeEntry,
 } from '@/clients/clockify'
 import type { WriteOffPlan } from '@/writeOff/plan'
+import { writeOffPlanSchema } from '@/writeOff/plan'
 
 import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const LOG_DIR = path.join(process.cwd(), 'temp', 'write-offs')
@@ -27,7 +29,7 @@ const LOG_DIR = path.join(process.cwd(), 'temp', 'write-offs')
 const changeLogSchema = z.object({
   id: z.string(),
   createdAt: z.iso.datetime(),
-  plan: z.unknown(),
+  plan: writeOffPlanSchema,
   items: z.array(
     z.object({
       kind: z.enum(['markNonBillable', 'split']),
@@ -51,6 +53,16 @@ function logPath(id: string) {
 async function saveLog(log: ChangeLog) {
   await mkdir(LOG_DIR, { recursive: true })
   await writeFile(logPath(log.id), JSON.stringify(log, null, 2))
+}
+
+export async function listChangeLogs() {
+  const files = await readdir(LOG_DIR).catch(() => [])
+  const logs = await Promise.all(
+    files
+      .filter(f => f.endsWith('.json'))
+      .map(f => loadChangeLog(path.basename(f, '.json'))),
+  )
+  return logs.toSorted((a, b) => compareStringAsc(b.createdAt, a.createdAt))
 }
 
 export async function loadChangeLog(id: string) {

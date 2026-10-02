@@ -5,16 +5,35 @@ import {
   compareStringAsc,
 } from '@bearing-agency/utilities/sort'
 
-import type { ClockifyReportTimeEntry } from '@/clients/clockify'
+import z from 'zod'
 
-export type WriteOffOp =
-  | { kind: 'markNonBillable'; entry: ClockifyReportTimeEntry }
-  | {
-      kind: 'split'
-      entry: ClockifyReportTimeEntry
-      billableSeconds: number
-      nonBillableSeconds: number
-    }
+import type { ClockifyReportTimeEntry } from '@/clients/clockify'
+import { reportTimeEntrySchema } from '@/clients/clockify'
+
+const seconds = z.number().int().nonnegative()
+
+const writeOffOpSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('markNonBillable'),
+    entry: reportTimeEntrySchema,
+  }),
+  z.object({
+    kind: z.literal('split'),
+    entry: reportTimeEntrySchema,
+    billableSeconds: seconds,
+    nonBillableSeconds: seconds,
+  }),
+])
+
+export type WriteOffOp = z.infer<typeof writeOffOpSchema>
+
+export const writeOffPlanSchema = z.object({
+  writeOffSeconds: seconds,
+  availableSeconds: seconds,
+  ops: z.array(writeOffOpSchema),
+})
+
+export type WriteOffPlan = z.infer<typeof writeOffPlanSchema>
 
 const startMs = (e: ClockifyReportTimeEntry) => Date.parse(e.timeInterval.start)
 
@@ -64,5 +83,3 @@ export function planWriteOff(
   }
   return { writeOffSeconds, availableSeconds, ops }
 }
-
-export type WriteOffPlan = ReturnType<typeof planWriteOff>
