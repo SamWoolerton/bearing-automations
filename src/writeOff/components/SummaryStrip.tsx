@@ -1,5 +1,6 @@
 import { plural } from '@bearing-agency/utilities/strings'
 
+import { NZD_PER_UNIT } from '@/billing/clientConfig'
 import type { EarningsSummary, Rated } from '@/billing/earnings'
 import { summariseEarnings } from '@/billing/earnings'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,24 +9,37 @@ import { billableShareLabel, formatDuration } from '@/lib/hours'
 import type { Overview } from '@/writeOff/overview'
 import { memberTally } from '@/writeOff/overview'
 
-const STATS: { label: string; value: (summary: EarningsSummary) => string }[] =
-  [
-    { label: 'Total time', value: s => formatDuration(s.totalSeconds) },
-    { label: 'Billable', value: s => formatDuration(s.billableSeconds) },
-    {
-      label: 'Non-billable',
-      value: s => formatDuration(s.totalSeconds - s.billableSeconds),
-    },
-    { label: 'Billable share', value: billableShareLabel },
-    { label: 'Billable $', value: s => formatDollars(s.billableAmount) },
-    {
-      label: 'Average hourly rate',
-      value: s =>
-        s.averageHourlyRate === null
-          ? '—'
-          : `${formatDollars(s.averageHourlyRate)}/h`,
-    },
-  ]
+const NZD_NOTE = `NZD at ${Object.entries(NZD_PER_UNIT)
+  .filter(([currency]) => currency !== 'NZD')
+  .map(([currency, rate]) => `${currency} ${rate}`)
+  .join(' · ')}`
+
+const STATS: {
+  label: string
+  value: (summary: EarningsSummary) => string
+  note?: string
+}[] = [
+  { label: 'Total time', value: s => formatDuration(s.totalSeconds) },
+  { label: 'Billable', value: s => formatDuration(s.billableSeconds) },
+  {
+    label: 'Non-billable',
+    value: s => formatDuration(s.totalSeconds - s.billableSeconds),
+  },
+  { label: 'Billable share', value: billableShareLabel },
+  {
+    label: 'Billable $',
+    value: s => formatDollars(s.billableAmount),
+    note: NZD_NOTE,
+  },
+  {
+    label: 'Average hourly rate',
+    value: s =>
+      s.averageHourlyRate === null
+        ? '—'
+        : `${formatDollars(s.averageHourlyRate)}/h`,
+    note: NZD_NOTE,
+  },
+]
 
 export function SummaryStrip({
   clients,
@@ -63,6 +77,11 @@ export function SummaryStrip({
               {focusMember && member && (
                 <span className="text-sm text-muted-foreground">
                   {focusMember.name}: {stat.value(member)}
+                </span>
+              )}
+              {stat.note && (
+                <span className="text-xs text-muted-foreground">
+                  {stat.note}
                 </span>
               )}
             </CardContent>

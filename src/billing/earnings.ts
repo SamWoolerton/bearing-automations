@@ -1,14 +1,14 @@
 import { sumBy } from '@bearing-agency/utilities/arrays'
 import { mapNullish, nullishDivide } from '@bearing-agency/utilities/nullish'
 
-import { hourlyRateFor } from '@/billing/clientConfig'
+import { nzdHourlyRateFor } from '@/billing/clientConfig'
 import type { Tally } from '@/lib/hours'
 import { HOUR_SECONDS, sumTallies } from '@/lib/hours'
 
 export type Rated = { hourlyRate: number | null }
 
 export const withHourlyRates = <C extends { name: string }>(clients: C[]) =>
-  clients.map(c => ({ ...c, hourlyRate: hourlyRateFor(c.name) }))
+  clients.map(c => ({ ...c, hourlyRate: nzdHourlyRateFor(c.name) }))
 
 export function summariseEarnings(items: (Tally & Rated)[]) {
   const rated = items.flatMap(({ hourlyRate, billableSeconds }) =>
