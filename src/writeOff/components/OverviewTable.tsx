@@ -3,6 +3,7 @@ import { cn } from '@bearing-agency/utilities/classnames'
 
 import { Fragment } from 'react'
 
+import { Card, CardContent } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -48,71 +49,75 @@ export function OverviewTable({
   const totalCellClass = 'border-l text-right'
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Client / project</TableHead>
-          {members.map(m => (
-            <TableHead key={m.id} className={memberCellClass(m.id)}>
-              {m.name}
-            </TableHead>
-          ))}
-          <TableHead className={totalCellClass}>Total</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {clients.map(client => (
-          <Fragment key={client.id}>
-            <TableRow className="border-t-2 bg-muted/60 font-semibold hover:bg-muted/60">
-              <TableCell className="text-base">{client.name}</TableCell>
-              {members.map(m => {
-                const tally = sumTallies(
-                  client.projects.flatMap(p =>
-                    p.users.filter(u => u.id === m.id),
-                  ),
-                )
-                return (
-                  <TableCell key={m.id} className={memberCellClass(m.id)}>
-                    {tally ? <TallyText tally={tally} /> : <Empty />}
-                  </TableCell>
-                )
-              })}
-              <TableCell className={cn(totalCellClass, 'text-base')}>
-                <TallyText tally={client} />
-              </TableCell>
+    <Card className="py-4">
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Client / project</TableHead>
+              {members.map(m => (
+                <TableHead key={m.id} className={memberCellClass(m.id)}>
+                  {m.name}
+                </TableHead>
+              ))}
+              <TableHead className={totalCellClass}>Total</TableHead>
             </TableRow>
-            {client.projects.map(project => (
-              <TableRow key={project.id}>
-                <TableCell className="pl-6">{project.name}</TableCell>
-                {members.map(m => {
-                  const user = project.users.find(u => u.id === m.id)
-                  return (
-                    <TableCell key={m.id} className={memberCellClass(m.id)}>
-                      {!user ? (
-                        <Empty />
-                      ) : user.billableSeconds === 0 ? (
-                        <TallyText tally={user} />
-                      ) : (
-                        <WriteOffCell
-                          userId={m.id}
-                          userName={m.name}
-                          projectId={project.id}
-                          projectName={`${client.name} / ${project.name}`}
-                          tally={user}
-                          onExecuted={onExecuted}
-                        />
-                      )}
+          </TableHeader>
+          <TableBody>
+            {clients.map(client => (
+              <Fragment key={client.id}>
+                <TableRow className="border-t-2 bg-surface-page font-semibold hover:bg-surface-page">
+                  <TableCell className="text-base">{client.name}</TableCell>
+                  {members.map(m => {
+                    const tally = sumTallies(
+                      client.projects.flatMap(p =>
+                        p.users.filter(u => u.id === m.id),
+                      ),
+                    )
+                    return (
+                      <TableCell key={m.id} className={memberCellClass(m.id)}>
+                        {tally ? <TallyText tally={tally} /> : <Empty />}
+                      </TableCell>
+                    )
+                  })}
+                  <TableCell className={cn(totalCellClass, 'text-base')}>
+                    <TallyText tally={client} />
+                  </TableCell>
+                </TableRow>
+                {client.projects.map(project => (
+                  <TableRow key={project.id}>
+                    <TableCell className="pl-6">{project.name}</TableCell>
+                    {members.map(m => {
+                      const user = project.users.find(u => u.id === m.id)
+                      return (
+                        <TableCell key={m.id} className={memberCellClass(m.id)}>
+                          {!user ? (
+                            <Empty />
+                          ) : user.billableSeconds === 0 ? (
+                            <TallyText tally={user} />
+                          ) : (
+                            <WriteOffCell
+                              userId={m.id}
+                              userName={m.name}
+                              projectId={project.id}
+                              projectName={`${client.name} / ${project.name}`}
+                              tally={user}
+                              onExecuted={onExecuted}
+                            />
+                          )}
+                        </TableCell>
+                      )
+                    })}
+                    <TableCell className={cn(totalCellClass, 'font-medium')}>
+                      <TallyText tally={project} />
                     </TableCell>
-                  )
-                })}
-                <TableCell className={cn(totalCellClass, 'font-medium')}>
-                  <TallyText tally={project} />
-                </TableCell>
-              </TableRow>
+                  </TableRow>
+                ))}
+              </Fragment>
             ))}
-          </Fragment>
-        ))}
-      </TableBody>
-    </Table>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }

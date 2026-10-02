@@ -117,4 +117,8 @@ body,
   code {
     @apply rounded-md border bg-muted px-1.5 py-0.5 text-[0.9em];
   }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
 }
