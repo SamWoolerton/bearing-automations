@@ -20,6 +20,7 @@ type ClientConfig = {
   clockify: string
   xero: string
   hourlyRate: number
+  inNZ: boolean
   poNumber?: string
 }
 
@@ -28,14 +29,21 @@ const CLIENTS: ClientConfig[] = [
     clockify: 'Acme',
     xero: 'Acme Limited',
     hourlyRate: 150,
+    inNZ: true,
     poNumber: 'PO-12345',
   },
-  { clockify: 'Globex', xero: 'Globex Corporation', hourlyRate: 175 },
+  {
+    clockify: 'Globex',
+    xero: 'Globex Corporation',
+    hourlyRate: 175,
+    inNZ: false,
+  },
 ]
 const SKIP_CLOCKIFY_CLIENTS = ['Fixed Price Client']
 
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
+const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATEDOUTPUT'
 const TZ = 'Pacific/Auckland'
 
 const sameName = (a: string, b: string) =>
@@ -117,7 +125,9 @@ async function main() {
         Quantity: hours,
         UnitAmount: cfg.hourlyRate,
         AccountCode: SALES_ACCOUNT_CODE,
-        TaxType: NZ_GST_ON_INCOME_TAX_TYPE,
+        TaxType: cfg.inNZ
+          ? NZ_GST_ON_INCOME_TAX_TYPE
+          : ZERO_RATED_INCOME_TAX_TYPE,
       }
 
       const existing = (draft?.LineItems ?? []).filter(e =>
