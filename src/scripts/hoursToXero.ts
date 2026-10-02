@@ -29,8 +29,7 @@ const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
 const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATED'
 
-const now = nowInNZ()
-const period = priorMonth(now)
+const period = priorMonth(nowInNZ())
 
 type Plan = {
   cfg: ClientConfig
@@ -214,7 +213,7 @@ async function main() {
     } else {
       await createDraftSalesInvoice({
         ContactID: p.contact.ContactID,
-        Date: format(now, 'yyyy-MM-dd'),
+        Date: format(period.end, 'yyyy-MM-dd'),
         Reference: p.cfg.poNumber ?? '',
         LineAmountTypes: 'Exclusive',
         LineItems: p.lines,
