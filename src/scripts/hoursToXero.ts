@@ -1,0 +1,180 @@
+import { assert } from '@bearing-agency/utilities/assertions'
+
+import { TZDate } from '@date-fns/tz'
+import { endOfMonth, format, startOfMonth, subMonths } from 'date-fns'
+
+import {
+  getBillableTimeByClientAndProject,
+  roundBillableHours,
+} from '@/clients/clockify'
+import type { XeroContact, XeroInvoice, XeroNewLineItem } from '@/clients/xero'
+import {
+  createDraftSalesInvoice,
+  getContacts,
+  getDraftSalesInvoices,
+  replaceInvoiceLineItems,
+} from '@/clients/xero'
+import { env } from '@/env'
+
+type ClientConfig = {
+  clockify: string
+  xero: string
+  hourlyRate: number
+  poNumber?: string
+}
+
+const CLIENTS: ClientConfig[] = [
+  {
+    clockify: 'Acme',
+    xero: 'Acme Limited',
+    hourlyRate: 150,
+    poNumber: 'PO-12345',
+  },
+  { clockify: 'Globex', xero: 'Globex Corporation', hourlyRate: 175 },
+]
+const SKIP_CLOCKIFY_CLIENTS = ['Fixed Price Client']
+
+const SALES_ACCOUNT_CODE = '200'
+const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
+const TZ = 'Pacific/Auckland'
+
+const sameName = (a: string, b: string) =>
+  a.trim().toLowerCase() === b.trim().toLowerCase()
+
+const now = TZDate.tz(TZ)
+const lastMonth = subMonths(now, 1)
+const periodStart = startOfMonth(lastMonth)
+const periodEnd = endOfMonth(lastMonth)
+const periodLabel = format(periodStart, 'MMMM yyyy')
+
+type Plan = {
+  cfg: ClientConfig
+  contact: XeroContact
+  draft?: XeroInvoice
+  lines: XeroNewLineItem[]
+}
+
+async function main() {
+  console.log(
+    `Period: ${periodLabel} (${periodStart.toISOString()} → ${periodEnd.toISOString()})  DRY_RUN=${env.DRY_RUN}`,
+  )
+
+  const time = await getBillableTimeByClientAndProject({
+    start: periodStart,
+    end: periodEnd,
+  })
+  const contacts = await getContacts()
+  const drafts = await getDraftSalesInvoices()
+
+  const errors: string[] = []
+  const contactFor = new Map<ClientConfig, XeroContact>()
+
+  for (const cfg of CLIENTS) {
+    const matches = contacts.filter(c => sameName(c.Name, cfg.xero))
+    if (matches.length !== 1)
+      errors.push(
+        `Xero contact "${cfg.xero}": ${matches.length} matches (need 1)`,
+      )
+    else contactFor.set(cfg, matches[0])
+  }
+
+  const plans: Plan[] = []
+
+  for (const client of time) {
+    if (SKIP_CLOCKIFY_CLIENTS.some(s => sameName(s, client.name))) continue
+
+    const cfg = CLIENTS.find(c => sameName(c.clockify, client.name))
+    if (!cfg) {
+      errors.push(
+        `Clockify client "${client.name || '(no client)'}" not in config or skip list`,
+      )
+      continue
+    }
+    const contact = contactFor.get(cfg)
+    if (!contact) continue
+
+    const clientDrafts = drafts.filter(
+      d => d.Contact.ContactID === contact.ContactID,
+    )
+    if (clientDrafts.length > 1) {
+      errors.push(
+        `"${cfg.xero}" has ${clientDrafts.length} draft invoices — resolve manually`,
+      )
+      continue
+    }
+    const draft = clientDrafts.at(0)
+
+    const lines: XeroNewLineItem[] = []
+    for (const project of client.children) {
+      const hours = roundBillableHours(project.duration)
+      if (hours === 0) continue
+
+      if (!project.name)
+        errors.push(`"${client.name}" has a project without a name`)
+
+      const line: XeroNewLineItem = {
+        Description: project.name,
+        Quantity: hours,
+        UnitAmount: cfg.hourlyRate,
+        AccountCode: SALES_ACCOUNT_CODE,
+        TaxType: NZ_GST_ON_INCOME_TAX_TYPE,
+      }
+
+      const existing = (draft?.LineItems ?? []).filter(e =>
+        sameName(e.Description, line.Description),
+      )
+      assert(
+        existing.length <= 1,
+        `"${cfg.xero}" draft has ${existing.length} lines for "${line.Description}"`,
+      )
+      if (existing.length === 0) {
+        lines.push(line)
+        continue
+      }
+      const [{ Quantity, UnitAmount }] = existing
+      assert(
+        Quantity === line.Quantity && UnitAmount === line.UnitAmount,
+        `"${cfg.xero}" draft line "${line.Description}" is ${Quantity}h × $${UnitAmount} but Clockify says ${line.Quantity}h × $${line.UnitAmount}`,
+      )
+    }
+
+    if (lines.length) plans.push({ cfg, contact, draft, lines })
+  }
+
+  if (errors.length)
+    throw new Error(`Aborting — nothing written:\n  ${errors.join('\n  ')}`)
+
+  for (const p of plans) {
+    const action = p.draft
+      ? `ADD to draft ${p.draft.InvoiceNumber ?? p.draft.InvoiceID}`
+      : 'CREATE new draft'
+    console.log(`\n${p.cfg.xero}: ${action}`)
+    for (const l of p.lines)
+      console.log(`  ${l.Description}: ${l.Quantity}h × $${l.UnitAmount}`)
+  }
+  if (!plans.length) console.log('Nothing to do.')
+  if (env.DRY_RUN) return console.log('\nDry run — set DRY_RUN=false to write.')
+
+  for (const p of plans) {
+    if (p.draft) {
+      await replaceInvoiceLineItems(p.draft.InvoiceID, [
+        ...p.draft.LineItems,
+        ...p.lines,
+      ])
+    } else {
+      await createDraftSalesInvoice({
+        ContactID: p.contact.ContactID,
+        Date: format(now, 'yyyy-MM-dd'),
+        Reference: p.cfg.poNumber ?? '',
+        LineAmountTypes: 'Exclusive',
+        LineItems: p.lines,
+      })
+    }
+    console.log(`✔ ${p.cfg.xero}`)
+  }
+}
+
+main().catch(e => {
+  console.error(e)
+  process.exit(1)
+})
