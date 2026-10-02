@@ -145,7 +145,7 @@ export function OverviewTable({
                       </TableCell>
                       {members.map(m => {
                         const user = project.users.find(u => u.id === m.id)
-                        const sync = syncs.get(cellKey(project.id, m.id))
+                        const sync = syncs.get(cellKey(month, project.id, m.id))
                         return (
                           <TableCell
                             key={m.id}

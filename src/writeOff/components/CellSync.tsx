@@ -12,8 +12,8 @@ export type CellSync =
 
 export type CellSyncs = ReadonlyMap<string, CellSync>
 
-export const cellKey = (projectId: string, userId: string) =>
-  `${projectId}:${userId}`
+export const cellKey = (month: string, projectId: string, userId: string) =>
+  `${month}:${projectId}:${userId}`
 
 export const cellSyncClass = (sync: CellSync | undefined) =>
   sync && sync.state !== 'syncing' && 'bg-negative/10 text-negative'

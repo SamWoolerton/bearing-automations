@@ -50,6 +50,10 @@ export const getMonthOverview = createServerFn({ method: 'GET' })
         start: period.start.toISOString(),
         end: period.end.toISOString(),
       },
+      months: selectableMonths(nowInNZ()).map(({ key, label }) => ({
+        value: key,
+        label,
+      })),
       members: membersIn(overview),
       clients: data.userId
         ? clientsWorkedOnBy(overview, data.userId)

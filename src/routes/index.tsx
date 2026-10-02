@@ -28,11 +28,14 @@ const loadOverview = (member: string | undefined, month?: string) =>
   getMonthOverview({ data: { userId: member, month } })
 
 export const Route = createFileRoute('/')({
-  validateSearch: z.object({ member: z.string().optional() }),
-  loaderDeps: ({ search }) => ({ member: search.member }),
+  validateSearch: z.object({
+    member: z.string().optional(),
+    month: z.string().optional(),
+  }),
+  loaderDeps: ({ search }) => ({ member: search.member, month: search.month }),
   loader: async ({ deps }) => {
     const [overview, logs] = await Promise.all([
-      loadOverview(deps.member),
+      loadOverview(deps.member, deps.month),
       getWriteOffLogs(),
     ])
     return { overview, logs }
@@ -117,7 +120,7 @@ function WriteOffPage() {
 
   function handleExecuted(executed: WriteOffExecuted) {
     const { request, log } = executed
-    const key = cellKey(request.projectId, request.userId)
+    const key = cellKey(request.month, request.projectId, request.userId)
     if (log.error) {
       const title = 'Write-off stopped partway'
       const description = `${log.error} — see the change log for what was applied`
@@ -138,6 +141,14 @@ function WriteOffPage() {
       actions={
         <>
           <SelectInput
+            className="w-44"
+            value={overview.period.key}
+            options={overview.months}
+            onChange={month =>
+              void navigate({ search: prev => ({ ...prev, month }) })
+            }
+          />
+          <SelectInput
             className="w-56"
             value={member ?? ALL_CLIENTS}
             options={[
@@ -149,7 +160,10 @@ function WriteOffPage() {
             ]}
             onChange={v =>
               void navigate({
-                search: { member: v === ALL_CLIENTS ? undefined : v },
+                search: prev => ({
+                  ...prev,
+                  member: v === ALL_CLIENTS ? undefined : v,
+                }),
               })
             }
           />
