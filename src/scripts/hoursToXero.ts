@@ -172,9 +172,10 @@ async function main() {
         Quantity: hours,
         UnitAmount: cfg.hourlyRate,
         AccountCode: SALES_ACCOUNT_CODE,
-        TaxType: cfg.inNZ
-          ? NZ_GST_ON_INCOME_TAX_TYPE
-          : ZERO_RATED_INCOME_TAX_TYPE,
+        TaxType:
+          cfg.currency === 'NZD'
+            ? NZ_GST_ON_INCOME_TAX_TYPE
+            : ZERO_RATED_INCOME_TAX_TYPE,
       }
 
       const existing = (draft?.LineItems ?? []).filter(e =>
@@ -225,6 +226,7 @@ async function main() {
         Date: format(period.end, 'yyyy-MM-dd'),
         Reference: p.cfg.poNumber ?? '',
         LineAmountTypes: 'Exclusive',
+        CurrencyCode: p.cfg.currency,
         LineItems: p.lines,
       })
     }

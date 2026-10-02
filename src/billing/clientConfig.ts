@@ -8,11 +8,14 @@ export type ClockifyClientConfig = {
   prefixProjectWithClient?: true
 }
 
+export const CURRENCIES = ['NZD', 'AUD', 'USD', 'CAD'] as const
+export type Currency = (typeof CURRENCIES)[number]
+
 export type ClientConfig = {
   clockify: (string | ClockifyClientConfig)[]
   xero: string
   hourlyRate: number
-  inNZ: boolean
+  currency: Currency
   poNumber?: string
 }
 
@@ -21,50 +24,70 @@ export const CLIENTS: ClientConfig[] = [
     clockify: ['Azlock'],
     xero: 'Clovelly Star Limited',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
   },
-  { clockify: ['Charge On'], xero: 'Charge On', hourlyRate: 95, inNZ: false },
-  { clockify: ['EAS'], xero: 'EAS', hourlyRate: 170, inNZ: false },
+  {
+    clockify: ['Charge On'],
+    xero: 'Charge On',
+    hourlyRate: 95,
+    currency: 'USD',
+  },
+  { clockify: ['EAS'], xero: 'EAS', hourlyRate: 170, currency: 'NZD' },
   {
     clockify: ['FSS'],
     xero: 'Fire Security Services (FSS)',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
   },
-  { clockify: ['Fosters'], xero: 'Fosters', hourlyRate: 150, inNZ: true },
+  { clockify: ['Fosters'], xero: 'Fosters', hourlyRate: 150, currency: 'NZD' },
   {
     clockify: ['Give Power', 'GivePower'],
     xero: 'GivePower',
     hourlyRate: 125,
-    inNZ: false,
+    currency: 'USD',
   },
-  { clockify: ['GoodFinch'], xero: 'GoodFinch', hourlyRate: 110, inNZ: false },
-  { clockify: ['HG Leach'], xero: 'HG Leach', hourlyRate: 170, inNZ: true },
+  {
+    clockify: ['GoodFinch'],
+    xero: 'GoodFinch',
+    hourlyRate: 110,
+    currency: 'USD',
+  },
+  {
+    clockify: ['HG Leach'],
+    xero: 'HG Leach',
+    hourlyRate: 170,
+    currency: 'NZD',
+  },
   {
     clockify: ['IT Partners'],
     xero: 'IT Partners',
     hourlyRate: 160,
-    inNZ: true,
+    currency: 'NZD',
   },
   {
     clockify: ['Livingstone'],
     xero: 'Livingstone Building NZ Ltd',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
   },
-  { clockify: ['Madimack'], xero: 'Madimack', hourlyRate: 140, inNZ: false },
+  {
+    clockify: ['Madimack'],
+    xero: 'Madimack',
+    hourlyRate: 140,
+    currency: 'AUD',
+  },
   {
     clockify: ['Get Freighted'],
     xero: 'Mipco Pty Ltd',
     hourlyRate: 170,
-    inNZ: false,
+    currency: 'AUD',
   },
-  { clockify: ['Caliber'], xero: 'Namaco', hourlyRate: 115, inNZ: true },
+  { clockify: ['Caliber'], xero: 'Namaco', hourlyRate: 115, currency: 'NZD' },
   {
     clockify: ['Prime Innovation'],
     xero: 'Prime Innovation',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
   },
   {
     clockify: [
@@ -73,32 +96,32 @@ export const CLIENTS: ClientConfig[] = [
     ],
     xero: 'Resolution8 Limited',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
   },
   {
     clockify: ['RB'],
     xero: 'Revolution Boutique',
     hourlyRate: 125,
-    inNZ: false,
+    currency: 'CAD',
   },
   {
     clockify: ['Sunstrong'],
     xero: 'Sunstrong Management',
     hourlyRate: 110,
-    inNZ: false,
+    currency: 'USD',
   },
   {
     clockify: ['TLC'],
     xero: 'The Lines Company (TLC)',
     hourlyRate: 170,
-    inNZ: true,
+    currency: 'NZD',
     poNumber: 'PO063581',
   },
   {
     clockify: ['Tompkins Wake'],
     xero: 'Tompkins Wake',
     hourlyRate: 185,
-    inNZ: true,
+    currency: 'NZD',
   },
 ]
 export const SKIP_CLOCKIFY_CLIENTS = [

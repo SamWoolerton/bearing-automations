@@ -1,6 +1,7 @@
 import ky from 'ky'
 import z from 'zod'
 
+import type { Currency } from '@/billing/clientConfig'
 import { appendResponseBodyToError, getAllPages } from '@/clients/http'
 import { env } from '@/env'
 
@@ -105,6 +106,7 @@ export async function createDraftSalesInvoice(invoice: {
   Date: string
   Reference: string
   LineAmountTypes: 'Exclusive' | 'Inclusive' | 'NoTax'
+  CurrencyCode: Currency
   LineItems: XeroNewLineItem[]
 }) {
   const { ContactID, ...rest } = invoice
