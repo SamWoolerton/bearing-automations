@@ -88,7 +88,7 @@ Import from the subpath, e.g. `import { assert } from '@bearing-agency/utilities
 
 ## Frontend-only
 
-- `classnames`: `cn(...classes)` — clsx + tailwind-merge.
+- `classnames`: `cn(...classes)` — clsx + tailwind-merge. Exception: `src/components/ui/` deliberately imports `cn` from shadcn's `cn` package instead, to match what the shadcn CLI generates — don't change those.
 - `hooks`: `useOnMount(fn)`
 - `ui`: `toOptions(values)` → `{ label, value }[]`
 - `files`: `downloadFile(content, filename, mimeType)`, `downloadCsv(rows, columns, filename)`
