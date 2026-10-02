@@ -60,7 +60,7 @@ export function OverviewTable({
   const members = membersIn(clients)
   const memberCellClass = (memberId: string) =>
     cn('text-right', memberId === focusMemberId && 'bg-primary/5')
-  const totalCellClass = 'border-l text-right'
+  const totalCellClass = 'border-r text-right'
 
   return (
     <Card className="py-4">
@@ -85,12 +85,12 @@ export function OverviewTable({
                   {allCollapsed ? 'Expand all' : 'Collapse all'}
                 </Button>
               </TableHead>
+              <TableHead className={totalCellClass}>Total</TableHead>
               {members.map(m => (
                 <TableHead key={m.id} className={memberCellClass(m.id)}>
                   {m.name}
                 </TableHead>
               ))}
-              <TableHead className={totalCellClass}>Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -118,6 +118,9 @@ export function OverviewTable({
                       {client.name}
                     </button>
                   </TableCell>
+                  <TableCell className={cn(totalCellClass, 'text-base')}>
+                    <TallyText tally={client} />
+                  </TableCell>
                   {members.map(m => {
                     const tally = memberTally(client.projects, m.id)
                     return (
@@ -126,9 +129,6 @@ export function OverviewTable({
                       </TableCell>
                     )
                   })}
-                  <TableCell className={cn(totalCellClass, 'text-base')}>
-                    <TallyText tally={client} />
-                  </TableCell>
                 </TableRow>
                 {!collapsed.has(client.id) &&
                   client.projects.map(project => (
@@ -137,6 +137,9 @@ export function OverviewTable({
                         className={cn(stickyColumnClass, 'bg-card pl-6')}
                       >
                         {project.name}
+                      </TableCell>
+                      <TableCell className={cn(totalCellClass, 'font-medium')}>
+                        <TallyText tally={project} />
                       </TableCell>
                       {members.map(m => {
                         const user = project.users.find(u => u.id === m.id)
@@ -174,9 +177,6 @@ export function OverviewTable({
                           </TableCell>
                         )
                       })}
-                      <TableCell className={cn(totalCellClass, 'font-medium')}>
-                        <TallyText tally={project} />
-                      </TableCell>
                     </TableRow>
                   ))}
               </Fragment>
