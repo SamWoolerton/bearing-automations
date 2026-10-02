@@ -49,7 +49,7 @@ async function main() {
   )
 
   console.log(
-    `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  DRY_RUN=${env.DRY_RUN}  ONLY_CLIENT=${env.ONLY_CLIENT ?? '(all)'}`,
+    `Period: ${period.label} (${period.start.toISOString()} → ${period.end.toISOString()})  ${env.DRY_RUN ? 'DRY RUN' : 'PROD'}  ${env.ONLY_CLIENT ? `ONLY_CLIENT=${env.ONLY_CLIENT}` : ''}`,
   )
   const { ONLY_CLIENT } = env
   if (ONLY_CLIENT)
