@@ -17,6 +17,7 @@ import {
   toTimeEntryInput,
   updateTimeEntry,
 } from '@/clients/clockify'
+import { errorMessage } from '@/lib/errors'
 import type { WriteOffPlan } from '@/writeOff/plan'
 import { writeOffPlanSchema } from '@/writeOff/plan'
 
@@ -92,9 +93,6 @@ function assertUnchangedSincePlan(
     `Entry ${live.id} ${oxfordAnd(problems)} — nothing written, re-plan and try again`,
   )
 }
-
-const errorMessage = (e: unknown) =>
-  e instanceof Error ? e.message : String(e)
 
 export async function executeWriteOff(plan: WriteOffPlan) {
   const liveEntries = []

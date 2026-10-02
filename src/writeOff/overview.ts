@@ -1,4 +1,4 @@
-import { unique } from '@bearing-agency/utilities/arrays'
+import { unique, uniqueBy } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 import { buildMapBy } from '@bearing-agency/utilities/maps'
 import { compareStringAsc } from '@bearing-agency/utilities/sort'
@@ -71,3 +71,11 @@ export type Overview = ReturnType<typeof buildOverview>
 
 export const clientsWorkedOnBy = (overview: Overview, userId: string) =>
   overview.filter(c => c.projects.some(p => p.users.some(u => u.id === userId)))
+
+export const membersIn = (overview: Overview) =>
+  uniqueBy(
+    overview.flatMap(c => c.projects.flatMap(p => p.users)),
+    u => u.id,
+  )
+    .map(({ id, name }) => ({ id, name }))
+    .toSorted((a, b) => compareStringAsc(a.name, b.name))

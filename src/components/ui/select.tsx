@@ -5,6 +5,8 @@ import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { Select as SelectPrimitive } from 'radix-ui'
 import * as React from 'react'
 
+import type { WithValueOnChange } from '@/lib/utils'
+
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
@@ -175,8 +177,44 @@ function SelectScrollDownButton({
   )
 }
 
+type SelectOption = { label: string; value: string }
+
+type SelectInputProps = WithValueOnChange<
+  {
+    value: string
+    options: SelectOption[]
+    placeholder?: string
+    className?: string
+  },
+  string
+>
+
+function SelectInput({
+  value,
+  options,
+  onChange,
+  placeholder,
+  className,
+}: SelectInputProps) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map(o => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
 export {
   Select,
+  SelectInput,
   SelectContent,
   SelectGroup,
   SelectItem,

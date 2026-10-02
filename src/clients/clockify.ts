@@ -71,9 +71,11 @@ export function roundBillableHours(seconds: number) {
 
 type DateRange = { start: Date; end: Date }
 
+const toUtcIso = (date: Date) => new Date(date.getTime()).toISOString()
+
 const reportDateRange = ({ start, end }: DateRange) => ({
-  dateRangeStart: start.toISOString(),
-  dateRangeEnd: end.toISOString(),
+  dateRangeStart: toUtcIso(start),
+  dateRangeEnd: toUtcIso(end),
 })
 
 const containsIds = (ids: string[]) => ({

@@ -1,3 +1,4 @@
+import { sumBy } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 import { stableStringify } from '@bearing-agency/utilities/objects'
 
@@ -8,13 +9,18 @@ import {
   getDetailedTimeEntries,
   getTimeByClientProjectAndUser,
 } from '@/clients/clockify'
+import { formatHours, isQuarterHourMultiple } from '@/lib/hours'
 import { nowInNZ, priorMonth } from '@/lib/periods'
 import {
   executeWriteOff,
   listChangeLogs,
   undoWriteOff,
 } from '@/writeOff/execute'
-import { buildOverview, clientsWorkedOnBy } from '@/writeOff/overview'
+import {
+  buildOverview,
+  clientsWorkedOnBy,
+  membersIn,
+} from '@/writeOff/overview'
 import { planWriteOff, writeOffPlanSchema } from '@/writeOff/plan'
 
 const currentPeriod = () => priorMonth(nowInNZ())
@@ -34,6 +40,7 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
         start: period.start.toISOString(),
         end: period.end.toISOString(),
       },
+      members: membersIn(overview),
       clients: data.userId
         ? clientsWorkedOnBy(overview, data.userId)
         : overview,
@@ -43,21 +50,32 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
 const writeOffRequestSchema = z.object({
   userId: z.string(),
   projectId: z.string(),
-  writeOffSeconds: z.number().int().positive(),
+  targetBillableSeconds: z
+    .number()
+    .int()
+    .nonnegative()
+    .refine(isQuarterHourMultiple, 'Must be in 15 minute steps'),
 })
+
+export type WriteOffRequest = z.infer<typeof writeOffRequestSchema>
 
 async function planFor({
   userId,
   projectId,
-  writeOffSeconds,
-}: z.infer<typeof writeOffRequestSchema>) {
+  targetBillableSeconds,
+}: WriteOffRequest) {
   const entries = await getDetailedTimeEntries({
     range: currentPeriod(),
     userIds: [userId],
     projectIds: [projectId],
     billable: true,
   })
-  return planWriteOff(entries, writeOffSeconds)
+  const billableSeconds = sumBy(entries, e => e.timeInterval.duration)
+  assert(
+    targetBillableSeconds < billableSeconds,
+    `Only ${formatHours(billableSeconds)}h is billable, so there's nothing to write off to reach ${formatHours(targetBillableSeconds)}h`,
+  )
+  return planWriteOff(entries, billableSeconds - targetBillableSeconds)
 }
 
 export const prepareWriteOff = createServerFn({ method: 'GET' })
