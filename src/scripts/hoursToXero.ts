@@ -27,7 +27,7 @@ const DUPLICATE_PROJECT_SUFFIX = /\s+(?:2|copy)$/i
 
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
-const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATEDOUTPUT'
+const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATED'
 
 const now = nowInNZ()
 const period = priorMonth(now)
