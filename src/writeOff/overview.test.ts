@@ -139,10 +139,14 @@ describe('buildOverview', () => {
 
     expect(() =>
       buildOverview(all, missing),
-    ).toThrowErrorMatchingInlineSnapshot(`[Error: Billable group "Other" (c2) missing from total time]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Billable group "Other" (c2) missing from total time]`,
+    )
     expect(() =>
       buildOverview(all, exceeding),
-    ).toThrowErrorMatchingInlineSnapshot(`[Error: "Acme" has more billable (3601s) than total (3600s) time]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: "Acme" has more billable (3601s) than total (3600s) time]`,
+    )
   })
 
   it('rejects duplicate group ids', () => {
@@ -154,7 +158,9 @@ describe('buildOverview', () => {
         project('p2', 'App', [user('u1', MINUTE_SECONDS)]),
       ]),
     ]
-    expect(() => buildOverview(all, [])).toThrowErrorMatchingInlineSnapshot(`[Error: Duplicate Clockify summary group ids: c1, c1]`)
+    expect(() => buildOverview(all, [])).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Duplicate Clockify summary group ids: c1, c1]`,
+    )
   })
 
   it('moves the no-client Internal project under Bearing', () => {
