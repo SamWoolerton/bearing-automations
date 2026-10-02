@@ -23,7 +23,7 @@ import { formatHours, roundBillableHours } from '@/lib/hours'
 import { includesName, normaliseName, sameName } from '@/lib/names'
 import { nowInNZ, priorMonth } from '@/lib/periods'
 
-const DUPLICATE_PROJECT_SUFFIX = /\s+(?:2|copy)$/i
+const DUPLICATE_PROJECT_SUFFIX = /\s+(?:2|copy|\(copy\))$/i
 
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
