@@ -18,8 +18,13 @@ import {
 } from '@/clients/xero'
 import { env } from '@/env'
 
+type ClockifyClientConfig = {
+  name: string
+  prefixProjectWithClient?: true
+}
+
 type ClientConfig = {
-  clockify: string[]
+  clockify: (string | ClockifyClientConfig)[]
   xero: string
   hourlyRate: number
   inNZ: boolean
@@ -51,13 +56,20 @@ const TZ = 'Pacific/Auckland'
 const normaliseName = (name: string) => name.trim().toLowerCase()
 const sameName = (a: string, b: string) => normaliseName(a) === normaliseName(b)
 
+const CLOCKIFY_MAPPINGS = CLIENTS.flatMap(cfg =>
+  cfg.clockify.map(c => ({
+    cfg,
+    ...(typeof c === 'string' ? { name: c } : c),
+  })),
+)
+
 const assertNoDuplicateNames = (names: string[], label: string) =>
   assert(
     unique(names.map(normaliseName)).length === names.length,
     `Duplicate ${label} name in config`,
   )
 assertNoDuplicateNames(
-  [...CLIENTS.flatMap(c => c.clockify), ...SKIP_CLOCKIFY_CLIENTS],
+  [...CLOCKIFY_MAPPINGS.map(m => m.name), ...SKIP_CLOCKIFY_CLIENTS],
   'Clockify client',
 )
 assertNoDuplicateNames(
@@ -102,21 +114,29 @@ async function main() {
     else contactFor.set(cfg, matches[0])
   }
 
-  const timeFor = new Map<ClientConfig, ClockifyClientTime[]>()
+  const timeFor = new Map<
+    ClientConfig,
+    ({ client: ClockifyClientTime } & Pick<
+      ClockifyClientConfig,
+      'prefixProjectWithClient'
+    >)[]
+  >()
 
   for (const client of time) {
     if (SKIP_CLOCKIFY_CLIENTS.some(s => sameName(s, client.name))) continue
 
-    const cfg = CLIENTS.find(c =>
-      c.clockify.some(name => sameName(name, client.name)),
-    )
-    if (!cfg) {
+    const mapping = CLOCKIFY_MAPPINGS.find(m => sameName(m.name, client.name))
+    if (!mapping) {
       errors.push(
         `Clockify client "${client.name || '(no client)'}" not in config or skip list`,
       )
       continue
     }
-    timeFor.set(cfg, [...(timeFor.get(cfg) ?? []), client])
+    const { cfg, prefixProjectWithClient } = mapping
+    timeFor.set(cfg, [
+      ...(timeFor.get(cfg) ?? []),
+      { client, prefixProjectWithClient },
+    ])
   }
 
   const plans: Plan[] = []
@@ -138,7 +158,7 @@ async function main() {
 
     const lines: XeroNewLineItem[] = []
     const seenDescriptions = new Set<string>()
-    for (const client of clients)
+    for (const { client, prefixProjectWithClient } of clients)
       for (const project of client.children) {
         const hours = roundBillableHours(project.duration)
         if (hours === 0) continue
@@ -146,16 +166,19 @@ async function main() {
         if (!project.name)
           errors.push(`"${client.name}" has a project without a name`)
 
-        if (seenDescriptions.has(normaliseName(project.name))) {
+        const description = prefixProjectWithClient
+          ? `${client.name} - ${project.name}`
+          : project.name
+        if (seenDescriptions.has(normaliseName(description))) {
           errors.push(
-            `"${cfg.xero}" has multiple Clockify projects named "${project.name}"`,
+            `"${cfg.xero}" has multiple Clockify projects named "${description}"`,
           )
           continue
         }
-        seenDescriptions.add(normaliseName(project.name))
+        seenDescriptions.add(normaliseName(description))
 
         const line: XeroNewLineItem = {
-          Description: project.name,
+          Description: description,
           Quantity: hours,
           UnitAmount: cfg.hourlyRate,
           AccountCode: SALES_ACCOUNT_CODE,
