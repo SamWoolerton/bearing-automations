@@ -9,6 +9,8 @@ import { SelectInput } from '@/components/ui/select'
 import { wait } from '@/lib/async'
 import { errorMessage } from '@/lib/errors'
 import { formatHours } from '@/lib/hours'
+import type { CellSync, CellSyncs } from '@/writeOff/components/CellSync'
+import { cellKey } from '@/writeOff/components/CellSync'
 import { ChangeLogSheet } from '@/writeOff/components/ChangeLogSheet'
 import { OverviewTable } from '@/writeOff/components/OverviewTable'
 import type { ChangeLog } from '@/writeOff/execute'
@@ -57,18 +59,21 @@ function WriteOffPage() {
   const navigate = Route.useNavigate()
   const router = useRouter()
   const [refreshing, setRefreshing] = useState(false)
+  const [syncs, setSyncs] = useState<CellSyncs>(new Map())
 
-  async function refresh(expected?: WriteOffRequest) {
+  const setSync = (key: string, sync: CellSync | null) =>
+    setSyncs(prev => {
+      const next = new Map(prev)
+      if (sync) next.set(key, sync)
+      else next.delete(key)
+      return next
+    })
+
+  async function refresh() {
     setRefreshing(true)
+    setSyncs(prev => new Map([...prev].filter(([, s]) => s.state !== 'stale')))
     try {
-      const caughtUp = expected
-        ? await waitForReportToShow(member, expected)
-        : true
       await router.invalidate()
-      if (!caughtUp)
-        toast.warning(
-          "Clockify's report hasn't caught up yet — refresh again in a moment",
-        )
     } catch (e) {
       toast.error('Refresh failed', { description: errorMessage(e) })
     } finally {
@@ -76,19 +81,43 @@ function WriteOffPage() {
     }
   }
 
-  function handleExecuted(request: WriteOffRequest, log: ChangeLog) {
-    if (log.error) {
-      toast.error('Write-off stopped partway', {
-        description: `${log.error} — see the change log for what was applied.`,
-        duration: Infinity,
+  async function syncCell(key: string, request: WriteOffRequest) {
+    setSync(key, { state: 'syncing' })
+    try {
+      const caughtUp = await waitForReportToShow(member, request)
+      await router.invalidate()
+      setSync(
+        key,
+        caughtUp
+          ? null
+          : {
+              state: 'stale',
+              message:
+                "Clockify's report hasn't caught up yet — refresh to check again",
+            },
+      )
+    } catch (e) {
+      setSync(key, {
+        state: 'stale',
+        message: `Couldn't refresh: ${errorMessage(e)}`,
       })
+    }
+  }
+
+  function handleExecuted(request: WriteOffRequest, log: ChangeLog) {
+    const key = cellKey(request.projectId, request.userId)
+    if (log.error) {
+      const title = 'Write-off stopped partway'
+      const description = `${log.error} — see the change log for what was applied`
+      setSync(key, { state: 'failed', message: `${title}: ${description}` })
+      toast.error(title, { description, duration: Infinity })
       void refresh()
       return
     }
     toast.success(
       `Wrote off ${formatHours(log.plan.writeOffSeconds)}h, ${formatHours(request.targetBillableSeconds)}h stays billable`,
     )
-    void refresh(request)
+    void syncCell(key, request)
   }
 
   return (
@@ -129,6 +158,7 @@ function WriteOffPage() {
         <OverviewTable
           clients={overview.clients}
           focusMemberId={member}
+          syncs={syncs}
           onExecuted={handleExecuted}
         />
       )}

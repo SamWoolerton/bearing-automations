@@ -14,6 +14,12 @@ import {
 } from '@/components/ui/table'
 import type { Tally } from '@/lib/hours'
 import { tallyLabel } from '@/lib/hours'
+import type { CellSyncs } from '@/writeOff/components/CellSync'
+import {
+  cellKey,
+  cellSyncClass,
+  CellSyncIndicator,
+} from '@/writeOff/components/CellSync'
 import { WriteOffCell } from '@/writeOff/components/WriteOffCell'
 import type { ChangeLog } from '@/writeOff/execute'
 import type { WriteOffRequest } from '@/writeOff/functions'
@@ -48,10 +54,12 @@ function sumTallies(tallies: Tally[]) {
 export function OverviewTable({
   clients,
   focusMemberId,
+  syncs,
   onExecuted,
 }: {
   clients: Overview
   focusMemberId: string | undefined
+  syncs: CellSyncs
   onExecuted: (request: WriteOffRequest, log: ChangeLog) => void
 }) {
   const members = membersIn(clients)
@@ -113,25 +121,35 @@ export function OverviewTable({
                     </TableCell>
                     {members.map(m => {
                       const user = project.users.find(u => u.id === m.id)
+                      const sync = syncs.get(cellKey(project.id, m.id))
                       return (
-                        <TableCell key={m.id} className={memberCellClass(m.id)}>
-                          {!user ? (
-                            <Empty />
-                          ) : user.billableSeconds === 0 ? (
-                            <TallyText
-                              tally={user}
-                              className="text-muted-foreground"
-                            />
-                          ) : (
-                            <WriteOffCell
-                              userId={m.id}
-                              userName={m.name}
-                              projectId={project.id}
-                              projectName={`${client.name} / ${project.name}`}
-                              tally={user}
-                              onExecuted={onExecuted}
-                            />
+                        <TableCell
+                          key={m.id}
+                          className={cn(
+                            memberCellClass(m.id),
+                            cellSyncClass(sync),
                           )}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {sync && <CellSyncIndicator sync={sync} />}
+                            {!user ? (
+                              <Empty />
+                            ) : user.billableSeconds === 0 ? (
+                              <TallyText
+                                tally={user}
+                                className={cn(!sync && 'text-muted-foreground')}
+                              />
+                            ) : (
+                              <WriteOffCell
+                                userId={m.id}
+                                userName={m.name}
+                                projectId={project.id}
+                                projectName={`${client.name} / ${project.name}`}
+                                tally={user}
+                                onExecuted={onExecuted}
+                              />
+                            )}
+                          </span>
                         </TableCell>
                       )
                     })}
