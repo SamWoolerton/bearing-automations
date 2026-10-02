@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button'
 import { SelectInput } from '@/components/ui/select'
 import { wait } from '@/lib/async'
 import { errorMessage } from '@/lib/errors'
-import { formatHours } from '@/lib/hours'
+import type { Tally } from '@/lib/hours'
+import { formatDuration, formatHours } from '@/lib/hours'
 import type { CellSync, CellSyncs } from '@/writeOff/components/CellSync'
 import { cellKey } from '@/writeOff/components/CellSync'
 import { ChangeLogSheet } from '@/writeOff/components/ChangeLogSheet'
 import { OverviewTable } from '@/writeOff/components/OverviewTable'
-import type { ChangeLog } from '@/writeOff/execute'
-import type { WriteOffRequest } from '@/writeOff/functions'
+import type { WriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import { getPriorMonthOverview, getWriteOffLogs } from '@/writeOff/functions'
 
 const loadOverview = (member: string | undefined) =>
@@ -37,20 +37,30 @@ const ALL_CLIENTS = 'all'
 const REPORT_POLL_ATTEMPTS = 10
 const REPORT_POLL_INTERVAL_MS = 2000
 
-async function waitForReportToShow(
+async function verifyReport(
   member: string | undefined,
-  { userId, projectId, targetBillableSeconds }: WriteOffRequest,
-) {
+  { request, totalSeconds }: WriteOffExecuted,
+): Promise<CellSync | null> {
+  const { userId, projectId, targetBillableSeconds } = request
+  let reported: Tally | undefined
   for (let attempt = 0; attempt < REPORT_POLL_ATTEMPTS; attempt++) {
     await wait(REPORT_POLL_INTERVAL_MS)
     const { clients } = await loadOverview(member)
-    const user = clients
+    reported = clients
       .flatMap(c => c.projects)
       .find(p => p.id === projectId)
       ?.users.find(u => u.id === userId)
-    if (user?.billableSeconds === targetBillableSeconds) return true
+    if (reported?.billableSeconds !== targetBillableSeconds) continue
+    if (reported.totalSeconds === totalSeconds) return null
+    return {
+      state: 'failed',
+      message: `Total changed from ${formatDuration(totalSeconds)} to ${formatDuration(reported.totalSeconds)} — check Clockify`,
+    }
   }
-  return false
+  return {
+    state: 'stale',
+    message: `Expected ${formatDuration(targetBillableSeconds)} billable, report still shows ${reported ? formatDuration(reported.billableSeconds) : 'no time'} — refresh to check again`,
+  }
 }
 
 function WriteOffPage() {
@@ -81,21 +91,12 @@ function WriteOffPage() {
     }
   }
 
-  async function syncCell(key: string, request: WriteOffRequest) {
+  async function syncCell(key: string, executed: WriteOffExecuted) {
     setSync(key, { state: 'syncing' })
     try {
-      const caughtUp = await waitForReportToShow(member, request)
+      const problem = await verifyReport(member, executed)
       await router.invalidate()
-      setSync(
-        key,
-        caughtUp
-          ? null
-          : {
-              state: 'stale',
-              message:
-                "Clockify's report hasn't caught up yet — refresh to check again",
-            },
-      )
+      setSync(key, problem)
     } catch (e) {
       setSync(key, {
         state: 'stale',
@@ -104,7 +105,8 @@ function WriteOffPage() {
     }
   }
 
-  function handleExecuted(request: WriteOffRequest, log: ChangeLog) {
+  function handleExecuted(executed: WriteOffExecuted) {
+    const { request, log } = executed
     const key = cellKey(request.projectId, request.userId)
     if (log.error) {
       const title = 'Write-off stopped partway'
@@ -117,7 +119,7 @@ function WriteOffPage() {
     toast.success(
       `Wrote off ${formatHours(log.plan.writeOffSeconds)}h, ${formatHours(request.targetBillableSeconds)}h stays billable`,
     )
-    void syncCell(key, request)
+    void syncCell(key, executed)
   }
 
   return (

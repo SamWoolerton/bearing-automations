@@ -21,8 +21,7 @@ import {
   CellSyncIndicator,
 } from '@/writeOff/components/CellSync'
 import { WriteOffCell } from '@/writeOff/components/WriteOffCell'
-import type { ChangeLog } from '@/writeOff/execute'
-import type { WriteOffRequest } from '@/writeOff/functions'
+import type { OnWriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import type { Overview } from '@/writeOff/overview'
 import { membersIn } from '@/writeOff/overview'
 
@@ -60,7 +59,7 @@ export function OverviewTable({
   clients: Overview
   focusMemberId: string | undefined
   syncs: CellSyncs
-  onExecuted: (request: WriteOffRequest, log: ChangeLog) => void
+  onExecuted: OnWriteOffExecuted
 }) {
   const members = membersIn(clients)
   const memberCellClass = (memberId: string) =>

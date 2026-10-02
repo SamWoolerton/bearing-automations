@@ -25,13 +25,21 @@ import type { WriteOffRequest } from '@/writeOff/functions'
 import { confirmWriteOff, prepareWriteOff } from '@/writeOff/functions'
 import type { WriteOffPlan } from '@/writeOff/plan'
 
+export type WriteOffExecuted = {
+  request: WriteOffRequest
+  log: ChangeLog
+  totalSeconds: number
+}
+
+export type OnWriteOffExecuted = (executed: WriteOffExecuted) => void
+
 type WriteOffCellProps = {
   userId: string
   userName: string
   projectId: string
   projectName: string
   tally: Tally
-  onExecuted: (request: WriteOffRequest, log: ChangeLog) => void
+  onExecuted: OnWriteOffExecuted
 }
 
 export function WriteOffCell({
@@ -61,12 +69,12 @@ export function WriteOffCell({
       <PopoverContent className="w-80">
         <WriteOffForm
           {...props}
-          billableSeconds={tally.billableSeconds}
+          tally={tally}
           pending={pending}
           setPending={setPending}
-          onExecuted={(request, log) => {
+          onExecuted={executed => {
             setOpen(false)
-            onExecuted(request, log)
+            onExecuted(executed)
           }}
         />
       </PopoverContent>
@@ -93,12 +101,11 @@ function WriteOffForm({
   userName,
   projectId,
   projectName,
-  billableSeconds,
+  tally: { billableSeconds, totalSeconds },
   pending,
   setPending,
   onExecuted,
-}: Omit<WriteOffCellProps, 'tally'> & {
-  billableSeconds: number
+}: WriteOffCellProps & {
   pending: boolean
   setPending: (pending: boolean) => void
 }) {
@@ -135,7 +142,7 @@ function WriteOffForm({
       const log = await confirmWriteOff({
         data: { ...request, confirmedPlan: plan },
       })
-      onExecuted(request, log)
+      onExecuted({ request, log, totalSeconds })
     })
 
   return (
