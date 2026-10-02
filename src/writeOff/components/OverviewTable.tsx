@@ -45,6 +45,7 @@ export function OverviewTable({
   const members = membersIn(clients)
   const memberCellClass = (memberId: string) =>
     cn('text-right', memberId === focusMemberId && 'bg-primary/5')
+  const totalCellClass = 'border-l text-right'
 
   return (
     <Table>
@@ -56,14 +57,14 @@ export function OverviewTable({
               {m.name}
             </TableHead>
           ))}
-          <TableHead className="text-right">Total</TableHead>
+          <TableHead className={totalCellClass}>Total</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {clients.map(client => (
           <Fragment key={client.id}>
-            <TableRow className="bg-muted/50 font-medium">
-              <TableCell>{client.name}</TableCell>
+            <TableRow className="border-t-2 bg-muted/60 font-semibold hover:bg-muted/60">
+              <TableCell className="text-base">{client.name}</TableCell>
               {members.map(m => {
                 const tally = sumTallies(
                   client.projects.flatMap(p =>
@@ -76,7 +77,7 @@ export function OverviewTable({
                   </TableCell>
                 )
               })}
-              <TableCell className="text-right">
+              <TableCell className={cn(totalCellClass, 'text-base')}>
                 <TallyText tally={client} />
               </TableCell>
             </TableRow>
@@ -104,7 +105,7 @@ export function OverviewTable({
                     </TableCell>
                   )
                 })}
-                <TableCell className="text-right">
+                <TableCell className={cn(totalCellClass, 'font-medium')}>
                   <TallyText tally={project} />
                 </TableCell>
               </TableRow>
