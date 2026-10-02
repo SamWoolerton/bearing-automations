@@ -19,7 +19,7 @@
     ],
     "customGroups": [
       {
-        "groupName": "compass",
+        "groupName": "bearing",
         "elementNamePattern": ["@bearing-agency/**"]
       }
     ],
