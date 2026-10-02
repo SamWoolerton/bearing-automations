@@ -33,21 +33,97 @@ type ClientConfig = {
 
 const CLIENTS: ClientConfig[] = [
   {
-    clockify: ['Acme'],
-    xero: 'Acme Limited',
-    hourlyRate: 150,
+    clockify: ['Azlock'],
+    xero: 'Clovelly Star Limited',
+    hourlyRate: 170,
     inNZ: true,
-    poNumber: 'PO-12345',
   },
+  { clockify: ['Charge On'], xero: 'Charge On', hourlyRate: 95, inNZ: false },
+  { clockify: ['EAS'], xero: 'EAS', hourlyRate: 170, inNZ: false },
   {
-    clockify: ['Globex'],
-    xero: 'Globex Corporation',
-    hourlyRate: 175,
+    clockify: ['FSS'],
+    xero: 'Fire Security Services (FSS)',
+    hourlyRate: 170,
+    inNZ: true,
+  },
+  { clockify: ['Fosters'], xero: 'Fosters', hourlyRate: 150, inNZ: true },
+  {
+    clockify: ['Give Power', 'GivePower'],
+    xero: 'GivePower',
+    hourlyRate: 125,
     inNZ: false,
   },
+  { clockify: ['GoodFinch'], xero: 'GoodFinch', hourlyRate: 110, inNZ: false },
+  { clockify: ['HG Leach'], xero: 'HG Leach', hourlyRate: 170, inNZ: true },
+  {
+    clockify: ['Health Bank'],
+    xero: 'Health Bank',
+    hourlyRate: 150,
+    inNZ: false,
+  },
+  {
+    clockify: ['IT Partners'],
+    xero: 'IT Partners',
+    hourlyRate: 160,
+    inNZ: true,
+  },
+  {
+    clockify: ['Livingstone'],
+    xero: 'Livingstone Building NZ Ltd',
+    hourlyRate: 170,
+    inNZ: true,
+  },
+  { clockify: ['Madimack'], xero: 'Madimack', hourlyRate: 140, inNZ: false },
+  {
+    clockify: ['Get Freighted'],
+    xero: 'Mipco Pty Ltd',
+    hourlyRate: 170,
+    inNZ: false,
+  },
+  { clockify: ['Caliber'], xero: 'Namaco', hourlyRate: 115, inNZ: true },
+  {
+    clockify: ['Prime Innovation'],
+    xero: 'Prime Innovation',
+    hourlyRate: 170,
+    inNZ: true,
+  },
+  {
+    clockify: [
+      'Resolution8',
+      { name: 'ConneXu', prefixProjectWithClient: true },
+    ],
+    xero: 'Resolution8 Limited',
+    hourlyRate: 170,
+    inNZ: true,
+  },
+  {
+    clockify: ['RB'],
+    xero: 'Revolution Boutique',
+    hourlyRate: 125,
+    inNZ: false,
+  },
+  {
+    clockify: ['Sunstrong'],
+    xero: 'Sunstrong Management',
+    hourlyRate: 110,
+    inNZ: false,
+  },
+  {
+    clockify: ['TLC'],
+    xero: 'The Lines Company (TLC)',
+    hourlyRate: 170,
+    inNZ: true,
+    poNumber: 'PO063581',
+  },
+  {
+    clockify: ['Tompkins Wake'],
+    xero: 'Tompkins Wake',
+    hourlyRate: 185,
+    inNZ: true,
+  },
 ]
-const SKIP_CLOCKIFY_CLIENTS = ['Fixed Price Client']
-const INACTIVE_CLOCKIFY_CLIENTS = ['EIP', 'Energy Impact Partners']
+const SKIP_CLOCKIFY_CLIENTS = ['Bearing', 'Coastal Medical']
+const INACTIVE_CLOCKIFY_CLIENTS = ['EIP', 'Energy Impact Partners', 'Resonate']
 
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
