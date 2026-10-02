@@ -1,0 +1,95 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "sort-imports": [
+      "error",
+      {
+        "ignoreDeclarationSort": true,
+        "ignoreCase": true
+      }
+    ],
+    "approx-constant": "error",
+    "arrow-body-style": "error",
+    "bad-bitwise-operator": "error",
+    "default-case": "error",
+    "default-case-last": "error",
+    "default-param-last": "error",
+    "eqeqeq": ["error", "smart"],
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+    "no-unneeded-ternary": "error",
+    "no-var": "error",
+    "object-shorthand": "error",
+    "operator-assignment": "error",
+    "oxc/approx-constant": "warn",
+    "prefer-const": "error",
+    "react/no-danger": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-empty-interface": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false
+        }
+      }
+    ],
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-unnecessary-boolean-literal-compare": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "unicorn/no-array-for-each": "error",
+    "unicorn/prefer-array-some": "error",
+    "unicorn/prefer-includes": "error",
+    "unicorn/prefer-spread": "error"
+  },
+  "env": {
+    "builtin": true
+  },
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    "prisma/generated/**",
+    "src/routeTree.gen.ts"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.{ts,tsx}",
+        "**/*.test-helpers.{ts,tsx}",
+        "**/*.spec.{ts,tsx}",
+        "**/__tests__/**"
+      ],
+      "rules": {
+        "typescript/no-non-null-assertion": "off"
+      }
+    },
+    {
+      "files": ["**/*.{cjs,js}"],
+      "rules": {
+        "typescript/no-require-imports": "off",
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off",
+        "typescript/no-unsafe-member-access": "off",
+        "typescript/no-unsafe-return": "off"
+      }
+    }
+  ]
+}
