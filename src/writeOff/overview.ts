@@ -125,7 +125,10 @@ export const buildOverview = (
   billable: ClockifyClientProjectUserTime[],
 ) => reclassifyInternalTime(mergeOverview(all, billable))
 
-export const clientsWorkedOnBy = (overview: Overview, userId: string) =>
+export const clientsWorkedOnBy = <C extends Overview[number]>(
+  overview: C[],
+  userId: string,
+) =>
   overview.filter(c => c.projects.some(p => p.users.some(u => u.id === userId)))
 
 export const memberTally = (

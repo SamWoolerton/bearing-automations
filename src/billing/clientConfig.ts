@@ -124,6 +124,9 @@ const CLOCKIFY_MAPPINGS = CLIENTS.flatMap(cfg =>
 export const clockifyMappingFor = (clockifyClient: string) =>
   CLOCKIFY_MAPPINGS.find(m => sameName(m.name, clockifyClient))
 
+export const hourlyRateFor = (clockifyClient: string) =>
+  clockifyMappingFor(clockifyClient)?.cfg.hourlyRate ?? null
+
 const assertNoDuplicateNames = (names: string[], label: string) =>
   assert(
     unique(names.map(normaliseName)).length === names.length,

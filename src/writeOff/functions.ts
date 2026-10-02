@@ -5,6 +5,7 @@ import { stableStringify } from '@bearing-agency/utilities/objects'
 import { createServerFn } from '@tanstack/react-start'
 import z from 'zod'
 
+import { withHourlyRates } from '@/billing/earnings'
 import {
   getDetailedTimeEntries,
   getTimeByClientProjectAndUser,
@@ -33,7 +34,7 @@ export const getPriorMonthOverview = createServerFn({ method: 'GET' })
       getTimeByClientProjectAndUser({ range: period }),
       getTimeByClientProjectAndUser({ range: period, billable: true }),
     ])
-    const overview = buildOverview(all, billable)
+    const overview = withHourlyRates(buildOverview(all, billable))
     return {
       period: {
         label: period.label,

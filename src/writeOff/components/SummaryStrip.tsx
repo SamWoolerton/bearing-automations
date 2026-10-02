@@ -1,35 +1,48 @@
 import { plural } from '@bearing-agency/utilities/strings'
 
+import type { EarningsSummary, Rated } from '@/billing/earnings'
+import { summariseEarnings } from '@/billing/earnings'
 import { Card, CardContent } from '@/components/ui/card'
-import type { Tally } from '@/lib/hours'
-import { billableShareLabel, formatDuration, sumTallies } from '@/lib/hours'
+import { formatDollars } from '@/lib/currency'
+import { billableShareLabel, formatDuration } from '@/lib/hours'
 import type { Overview } from '@/writeOff/overview'
 import { memberTally } from '@/writeOff/overview'
 
-const STATS: { label: string; value: (tally: Tally) => string }[] = [
-  { label: 'Total time', value: t => formatDuration(t.totalSeconds) },
-  { label: 'Billable', value: t => formatDuration(t.billableSeconds) },
-  {
-    label: 'Non-billable',
-    value: t => formatDuration(t.totalSeconds - t.billableSeconds),
-  },
-  { label: 'Billable share', value: billableShareLabel },
-]
+const STATS: { label: string; value: (summary: EarningsSummary) => string }[] =
+  [
+    { label: 'Total time', value: s => formatDuration(s.totalSeconds) },
+    { label: 'Billable', value: s => formatDuration(s.billableSeconds) },
+    {
+      label: 'Non-billable',
+      value: s => formatDuration(s.totalSeconds - s.billableSeconds),
+    },
+    { label: 'Billable share', value: billableShareLabel },
+    { label: 'Billable $', value: s => formatDollars(s.billableAmount) },
+    {
+      label: 'Average hourly rate',
+      value: s =>
+        s.averageHourlyRate === null
+          ? '—'
+          : `${formatDollars(s.averageHourlyRate)}/h`,
+    },
+  ]
 
 export function SummaryStrip({
   clients,
   focusMember,
 }: {
-  clients: Overview
+  clients: (Overview[number] & Rated)[]
   focusMember: { id: string; name: string } | undefined
 }) {
-  const team = sumTallies(clients)
+  const team = summariseEarnings(clients)
   if (!team) return null
   const member =
     focusMember &&
-    memberTally(
-      clients.flatMap(c => c.projects),
-      focusMember.id,
+    summariseEarnings(
+      clients.flatMap(({ projects, hourlyRate }) => {
+        const tally = memberTally(projects, focusMember.id)
+        return tally ? [{ ...tally, hourlyRate }] : []
+      }),
     )
 
   return (
@@ -39,7 +52,7 @@ export function SummaryStrip({
           ? `Everyone's time on ${focusMember.name}'s ${plural('client', clients.length)}`
           : `Everyone's time across ${plural('client', clients.length)}`}
       </p>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
         {STATS.map(stat => (
           <Card key={stat.label} className="gap-1 py-4">
             <CardContent className="flex flex-col gap-1">
