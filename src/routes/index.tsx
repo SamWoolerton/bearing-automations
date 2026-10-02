@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import z from 'zod'
 
+import { PageShell } from '@/components/PageShell'
 import { Button } from '@/components/ui/button'
 import { SelectInput } from '@/components/ui/select'
 import { wait } from '@/lib/async'
@@ -14,6 +15,11 @@ import type { CellSync, CellSyncs } from '@/writeOff/components/CellSync'
 import { cellKey } from '@/writeOff/components/CellSync'
 import { ChangeLogSheet } from '@/writeOff/components/ChangeLogSheet'
 import { OverviewTable } from '@/writeOff/components/OverviewTable'
+import {
+  PAGE_TITLE,
+  WriteOffPageError,
+  WriteOffPageSkeleton,
+} from '@/writeOff/components/PageStates'
 import { SummaryStrip } from '@/writeOff/components/SummaryStrip'
 import type { WriteOffExecuted } from '@/writeOff/components/WriteOffCell'
 import { getPriorMonthOverview, getWriteOffLogs } from '@/writeOff/functions'
@@ -32,6 +38,9 @@ export const Route = createFileRoute('/')({
     return { overview, logs }
   },
   component: WriteOffPage,
+  pendingComponent: WriteOffPageSkeleton,
+  pendingMs: 200,
+  errorComponent: WriteOffPageError,
 })
 
 const ALL_CLIENTS = 'all'
@@ -124,37 +133,40 @@ function WriteOffPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <header className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-2xl font-bold">
-          Write-offs · {overview.period.label}
-        </h1>
-        <SelectInput
-          className="w-56"
-          value={member ?? ALL_CLIENTS}
-          options={[
-            { label: 'All clients', value: ALL_CLIENTS },
-            ...overview.members.map(m => ({
-              label: `${m.name}'s clients`,
-              value: m.id,
-            })),
-          ]}
-          onChange={v =>
-            void navigate({
-              search: { member: v === ALL_CLIENTS ? undefined : v },
-            })
-          }
-        />
-        <Button
-          variant="outline"
-          disabled={refreshing}
-          onClick={() => void refresh()}
-        >
-          <RefreshCwIcon className={refreshing ? 'animate-spin' : undefined} />
-          {refreshing ? 'Refreshing…' : 'Refresh'}
-        </Button>
-        <ChangeLogSheet logs={logs} />
-      </header>
+    <PageShell
+      title={`${PAGE_TITLE} · ${overview.period.label}`}
+      actions={
+        <>
+          <SelectInput
+            className="w-56"
+            value={member ?? ALL_CLIENTS}
+            options={[
+              { label: 'All clients', value: ALL_CLIENTS },
+              ...overview.members.map(m => ({
+                label: `${m.name}'s clients`,
+                value: m.id,
+              })),
+            ]}
+            onChange={v =>
+              void navigate({
+                search: { member: v === ALL_CLIENTS ? undefined : v },
+              })
+            }
+          />
+          <Button
+            variant="outline"
+            disabled={refreshing}
+            onClick={() => void refresh()}
+          >
+            <RefreshCwIcon
+              className={refreshing ? 'animate-spin' : undefined}
+            />
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </Button>
+          <ChangeLogSheet logs={logs} />
+        </>
+      }
+    >
       {overview.clients.length === 0 ? (
         <p className="text-muted-foreground">No time logged this period.</p>
       ) : (
@@ -171,6 +183,6 @@ function WriteOffPage() {
           />
         </>
       )}
-    </div>
+    </PageShell>
   )
 }
