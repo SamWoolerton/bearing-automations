@@ -125,6 +125,8 @@ const CLIENTS: ClientConfig[] = [
 const SKIP_CLOCKIFY_CLIENTS = ['Bearing', 'Coastal Medical']
 const INACTIVE_CLOCKIFY_CLIENTS = ['EIP', 'Energy Impact Partners', 'Resonate']
 
+const DUPLICATE_PROJECT_SUFFIX = /\s+(?:2|copy)$/i
+
 const SALES_ACCOUNT_CODE = '200'
 const NZ_GST_ON_INCOME_TAX_TYPE = 'OUTPUT2'
 const ZERO_RATED_INCOME_TAX_TYPE = 'ZERORATEDOUTPUT'
@@ -245,54 +247,78 @@ async function main() {
     }
     const draft = clientDrafts.at(0)
 
-    const lines: XeroNewLineItem[] = []
-    const seenDescriptions = new Set<string>()
-    for (const { client, prefixProjectWithClient } of clients)
+    const projects: { description: string; seconds: number }[] = []
+    for (const { client, prefixProjectWithClient } of clients) {
       for (const project of client.children) {
-        const hours = roundBillableHours(project.duration)
-        if (hours === 0) continue
-
-        if (!project.name)
+        if (!project.name && roundBillableHours(project.duration) > 0)
           errors.push(`"${client.name}" has a project without a name`)
 
-        const description = prefixProjectWithClient
-          ? `${client.name} - ${project.name}`
-          : project.name
-        if (seenDescriptions.has(normaliseName(description))) {
-          errors.push(
-            `"${cfg.xero}" has multiple Clockify projects named "${description}"`,
-          )
-          continue
-        }
-        seenDescriptions.add(normaliseName(description))
-
-        const line: XeroNewLineItem = {
-          Description: description,
-          Quantity: hours,
-          UnitAmount: cfg.hourlyRate,
-          AccountCode: SALES_ACCOUNT_CODE,
-          TaxType: cfg.inNZ
-            ? NZ_GST_ON_INCOME_TAX_TYPE
-            : ZERO_RATED_INCOME_TAX_TYPE,
-        }
-
-        const existing = (draft?.LineItems ?? []).filter(e =>
-          sameName(e.Description, line.Description),
-        )
-        assert(
-          existing.length <= 1,
-          `"${cfg.xero}" draft has ${existing.length} lines for "${line.Description}"`,
-        )
-        if (existing.length === 0) {
-          lines.push(line)
-          continue
-        }
-        const [{ Quantity, UnitAmount }] = existing
-        assert(
-          Quantity === line.Quantity && UnitAmount === line.UnitAmount,
-          `"${cfg.xero}" draft line "${line.Description}" is ${Quantity}h × $${UnitAmount} but Clockify says ${line.Quantity}h × $${line.UnitAmount}`,
-        )
+        projects.push({
+          description: prefixProjectWithClient
+            ? `${client.name} - ${project.name}`
+            : project.name,
+          seconds: project.duration,
+        })
       }
+    }
+
+    const descriptionFor = new Map(
+      projects.map(p => [normaliseName(p.description), p.description]),
+    )
+    const secondsFor = new Map<string, number>()
+    const canonicalDescription = (description: string) =>
+      descriptionFor.get(normaliseName(description))
+    for (const project of projects) {
+      const description =
+        canonicalDescription(
+          project.description.replace(DUPLICATE_PROJECT_SUFFIX, ''),
+        ) ?? canonicalDescription(project.description)
+      assert(
+        description !== undefined,
+        `No description found for "${project.description}"`,
+      )
+      if (!sameName(description, project.description))
+        console.log(
+          `${cfg.xero}: merging "${project.description}" into "${description}"`,
+        )
+      secondsFor.set(
+        description,
+        (secondsFor.get(description) ?? 0) + project.seconds,
+      )
+    }
+
+    const lines: XeroNewLineItem[] = []
+    for (const [description, seconds] of secondsFor) {
+      const hours = roundBillableHours(seconds)
+      if (hours === 0) continue
+
+      const line: XeroNewLineItem = {
+        Description: description,
+        Quantity: hours,
+        UnitAmount: cfg.hourlyRate,
+        AccountCode: SALES_ACCOUNT_CODE,
+        TaxType: cfg.inNZ
+          ? NZ_GST_ON_INCOME_TAX_TYPE
+          : ZERO_RATED_INCOME_TAX_TYPE,
+      }
+
+      const existing = (draft?.LineItems ?? []).filter(e =>
+        sameName(e.Description, line.Description),
+      )
+      assert(
+        existing.length <= 1,
+        `"${cfg.xero}" draft has ${existing.length} lines for "${line.Description}"`,
+      )
+      if (existing.length === 0) {
+        lines.push(line)
+        continue
+      }
+      const [{ Quantity, UnitAmount }] = existing
+      assert(
+        Quantity === line.Quantity && UnitAmount === line.UnitAmount,
+        `"${cfg.xero}" draft line "${line.Description}" is ${Quantity}h × $${UnitAmount} but Clockify says ${line.Quantity}h × $${line.UnitAmount}`,
+      )
+    }
 
     if (lines.length) plans.push({ cfg, contact, draft, lines })
   }
