@@ -98,7 +98,10 @@ export function OverviewTable({
           <TableBody>
             {clients.map(client => (
               <Fragment key={client.id}>
-                <TableRow className="border-t-2 bg-surface-page font-semibold hover:bg-surface-page has-aria-expanded:bg-surface-page">
+                <TableRow
+                  className="cursor-pointer border-t-2 bg-surface-page font-semibold hover:bg-surface-page has-aria-expanded:bg-surface-page"
+                  onClick={() => setCollapsed(c => setToggle(c, client.id))}
+                >
                   <TableCell
                     className={cn(
                       stickyColumnClass,
@@ -109,7 +112,6 @@ export function OverviewTable({
                       type="button"
                       aria-expanded={!collapsed.has(client.id)}
                       className="inline-flex cursor-pointer items-center gap-1.5 rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                      onClick={() => setCollapsed(c => setToggle(c, client.id))}
                     >
                       <ChevronRightIcon
                         className={cn(
