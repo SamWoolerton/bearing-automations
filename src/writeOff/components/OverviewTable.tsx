@@ -71,7 +71,9 @@ export function OverviewTable({
           <TableHeader className="sticky top-0 z-20 bg-card shadow-[0_1px_0_var(--color-border)]">
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(stickyColumnClass, 'bg-card')}>
-                Client / project
+                Client{' '}
+                <ChevronRightIcon className="inline size-[1em] align-[-0.125em]" />{' '}
+                Project
                 <Button
                   variant="ghost"
                   size="sm"
