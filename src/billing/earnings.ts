@@ -23,6 +23,10 @@ export function summariseEarnings(items: (Tally & Rated)[]) {
     ...tally,
     billableAmount,
     averageHourlyRate: nullishDivide(billableAmount, ratedHours),
+    effectiveHourlyRate: nullishDivide(
+      billableAmount,
+      tally.totalSeconds / HOUR_SECONDS,
+    ),
   }))
 }
 
