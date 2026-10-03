@@ -43,7 +43,10 @@ export function sumTallies(tallies: Tally[]) {
   }
 }
 
-export const billableShareLabel = ({ billableSeconds, totalSeconds }: Tally) =>
+export const billableProportionLabel = ({
+  billableSeconds,
+  totalSeconds,
+}: Tally) =>
   totalSeconds === 0
     ? '—'
     : `${Math.round((100 * billableSeconds) / totalSeconds)}%`

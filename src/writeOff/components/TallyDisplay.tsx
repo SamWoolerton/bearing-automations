@@ -1,7 +1,7 @@
 import { cn } from '@bearing-agency/utilities/classnames'
 
 import type { Tally } from '@/lib/hours'
-import { billableShareLabel, formatDuration } from '@/lib/hours'
+import { billableProportionLabel, formatDuration } from '@/lib/hours'
 
 export function TallyDisplay({ tally }: { tally: Tally }) {
   const { billableSeconds, totalSeconds } = tally
@@ -10,7 +10,7 @@ export function TallyDisplay({ tally }: { tally: Tally }) {
   return (
     <span
       className="inline-flex flex-col gap-0.5 tabular-nums"
-      title={`${billableShareLabel(tally)} billable`}
+      title={`${billableProportionLabel(tally)} billable`}
     >
       <span>
         {partlyBillable ? (

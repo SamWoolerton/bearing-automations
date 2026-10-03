@@ -5,7 +5,7 @@ import type { EarningsSummary, Rated } from '@/billing/earnings'
 import { summariseEarnings } from '@/billing/earnings'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDollars } from '@/lib/currency'
-import { billableShareLabel, formatDuration } from '@/lib/hours'
+import { billableProportionLabel, formatDuration } from '@/lib/hours'
 import type { Overview } from '@/writeOff/overview'
 import { memberTally } from '@/writeOff/overview'
 
@@ -25,7 +25,7 @@ const STATS: {
     label: 'Non-billable',
     value: s => formatDuration(s.totalSeconds - s.billableSeconds),
   },
-  { label: 'Billable share', value: billableShareLabel },
+  { label: 'Billable proportion', value: billableProportionLabel },
   {
     label: 'Billable $',
     value: s => formatDollars(s.billableAmount),
