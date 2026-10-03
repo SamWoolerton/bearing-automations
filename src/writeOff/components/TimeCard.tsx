@@ -15,8 +15,13 @@ function LegendItem({
   seconds: number
 }) {
   return (
-    <span className="flex items-center gap-2">
-      <span className={cn('size-2 rounded-full', colour)} />
+    <span className="flex items-baseline gap-2">
+      <span
+        className={cn(
+          'size-[0.5em] shrink-0 translate-y-[-0.1em] rounded-full',
+          colour,
+        )}
+      />
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium tabular-nums">
         {formatDuration(seconds)}
