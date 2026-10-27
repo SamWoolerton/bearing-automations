@@ -120,10 +120,29 @@ function reclassifyInternalTime(overview: Overview) {
   ].toSorted(byName)
 }
 
+const nonBillable = <T extends Tally>(tally: T) => ({
+  ...tally,
+  billableSeconds: 0,
+})
+
+const markBearingNonBillable = (overview: Overview) =>
+  overview.map(client =>
+    client.name === BEARING_CLIENT
+      ? {
+          ...nonBillable(client),
+          projects: client.projects.map(project => ({
+            ...nonBillable(project),
+            users: project.users.map(nonBillable),
+          })),
+        }
+      : client,
+  )
+
 export const buildOverview = (
   all: ClockifyClientProjectUserTime[],
   billable: ClockifyClientProjectUserTime[],
-) => reclassifyInternalTime(mergeOverview(all, billable))
+) =>
+  markBearingNonBillable(reclassifyInternalTime(mergeOverview(all, billable)))
 
 export const clientsWorkedOnBy = <C extends Overview[number]>(
   overview: C[],
