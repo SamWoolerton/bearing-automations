@@ -60,6 +60,14 @@ export type ClockifyClientProjectUserTime = z.infer<
   typeof clientProjectUserSchema
 >
 
+const dateClientProjectSchema = withChildren(clientProjectSchema).extend({
+  _id: z.iso.date(),
+})
+
+export type ClockifyDateClientProjectTime = z.infer<
+  typeof dateClientProjectSchema
+>
+
 type DateRange = { start: Date; end: Date }
 
 const userSchema = z.object({ settings: z.object({ timeZone: z.string() }) })
@@ -120,6 +128,20 @@ export const getBillableTimeByClientAndProject = (range: DateRange) =>
     groups: ['CLIENT', 'PROJECT'],
     groupSchema: clientProjectSchema,
     billable: true,
+  })
+
+export const getTimeByDateClientAndProject = ({
+  range,
+  billable,
+}: {
+  range: DateRange
+  billable?: boolean
+}) =>
+  getSummary({
+    range,
+    groups: ['DATE', 'CLIENT', 'PROJECT'],
+    groupSchema: dateClientProjectSchema,
+    billable,
   })
 
 export const getTimeByClientProjectAndUser = ({

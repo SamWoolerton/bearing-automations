@@ -6,7 +6,10 @@ import {
 } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
 import { buildMapBy } from '@bearing-agency/utilities/maps'
-import { compareStringAsc } from '@bearing-agency/utilities/sort'
+import {
+  compareNumericAsc,
+  compareStringAsc,
+} from '@bearing-agency/utilities/sort'
 
 import type { ClockifyClientProjectUserTime } from '@/clients/clockify'
 import type { Tally } from '@/lib/hours'
@@ -83,6 +86,10 @@ const NO_CLIENT = ''
 const INTERNAL_PROJECT = 'Internal'
 const BEARING_CLIENT = 'Bearing'
 
+export const isBearingTime = (clientName: string, projectName: string) =>
+  clientName === BEARING_CLIENT ||
+  (clientName === NO_CLIENT && projectName === INTERNAL_PROJECT)
+
 const shiftTally = <T extends Tally>(tally: T, by: Tally, sign: 1 | -1) => ({
   ...tally,
   billableSeconds: tally.billableSeconds + sign * by.billableSeconds,
@@ -154,6 +161,16 @@ export const memberTally = (
   projects: Overview[number]['projects'],
   userId: string,
 ) => sumTallies(projects.flatMap(p => p.users.filter(u => u.id === userId)))
+
+export function memberTallies(overview: Overview) {
+  const projects = overview.flatMap(c => c.projects)
+  return membersIn(overview)
+    .flatMap(member => {
+      const tally = memberTally(projects, member.id)
+      return tally ? [{ ...member, ...tally }] : []
+    })
+    .toSorted((a, b) => compareNumericAsc(b.totalSeconds, a.totalSeconds))
+}
 
 export const membersIn = (overview: Overview) =>
   uniqueBy(

@@ -6,12 +6,14 @@ import { createServerFn } from '@tanstack/react-start'
 import z from 'zod'
 
 import { withHourlyRates } from '@/billing/earnings'
+import { buildTargetLineup, tallyByDate } from '@/billing/targets'
 import {
   getDetailedTimeEntries,
   getTimeByClientProjectAndUser,
+  getTimeByDateClientAndProject,
 } from '@/clients/clockify'
 import { formatHours, isQuarterHourMultiple } from '@/lib/hours'
-import { nowInNZ, priorMonth, selectableMonths } from '@/lib/periods'
+import { isoDate, nowInNZ, priorMonth, selectableMonths } from '@/lib/periods'
 import {
   executeWriteOff,
   listChangeLogs,
@@ -38,9 +40,11 @@ export const getMonthOverview = createServerFn({ method: 'GET' })
     const period = data.month
       ? selectablePeriod(data.month)
       : priorMonth(nowInNZ())
-    const [all, billable] = await Promise.all([
+    const [all, billable, allByDate, billableByDate] = await Promise.all([
       getTimeByClientProjectAndUser({ range: period }),
       getTimeByClientProjectAndUser({ range: period, billable: true }),
+      getTimeByDateClientAndProject({ range: period }),
+      getTimeByDateClientAndProject({ range: period, billable: true }),
     ])
     const overview = withHourlyRates(buildOverview(all, billable))
     return {
@@ -55,6 +59,11 @@ export const getMonthOverview = createServerFn({ method: 'GET' })
         label,
       })),
       members: membersIn(overview),
+      targets: buildTargetLineup(
+        period,
+        tallyByDate(allByDate, billableByDate),
+        isoDate(nowInNZ()),
+      ),
       clients: data.userId
         ? clientsWorkedOnBy(overview, data.userId)
         : overview,

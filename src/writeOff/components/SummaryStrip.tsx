@@ -6,11 +6,13 @@ import type { ReactNode } from 'react'
 import { NZD_PER_UNIT } from '@/billing/clientConfig'
 import type { EarningsSummary, Rated } from '@/billing/earnings'
 import { summariseEarnings } from '@/billing/earnings'
+import type { TargetLineup } from '@/billing/targets'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDollars } from '@/lib/currency'
+import { TargetCard } from '@/writeOff/components/TargetCard'
 import { TimeCard } from '@/writeOff/components/TimeCard'
 import type { Overview } from '@/writeOff/overview'
-import { memberTally } from '@/writeOff/overview'
+import { memberTallies, memberTally } from '@/writeOff/overview'
 
 const NZD_NOTE = `NZD at ${Object.entries(NZD_PER_UNIT)
   .filter(([currency]) => currency !== 'NZD')
@@ -64,9 +66,11 @@ function RateLine({ rate, caption }: { rate: number | null; caption: string }) {
 export function SummaryStrip({
   clients,
   focusMember,
+  targets,
 }: {
   clients: (Overview[number] & Rated)[]
   focusMember: { id: string; name: string } | undefined
+  targets: TargetLineup
 }) {
   const team = summariseEarnings(clients)
   if (!team) return null
@@ -91,14 +95,18 @@ export function SummaryStrip({
           : `Everyone's time across ${plural('client', clients.length)}`}
       </p>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <TimeCard team={team} member={member} />
+        <TimeCard
+          team={team}
+          people={memberTallies(clients)}
+          focusMemberId={focusMember?.id}
+        />
 
         <StatCard
           label="Billable $"
           member={
             member && {
               name: member.name,
-              value: formatDollars(member.billableAmount),
+              value: `${formatDollars(member.billableAmount)} · ${formatRates(member)}`,
             }
           }
         >
@@ -106,13 +114,8 @@ export function SummaryStrip({
             {formatDollars(team.billableAmount)}
           </span>
           <span className="mt-1 text-xs text-muted-foreground">{NZD_NOTE}</span>
-        </StatCard>
-
-        <StatCard
-          label="Hourly rate"
-          member={member && { name: member.name, value: formatRates(member) }}
-        >
-          <div className="flex flex-col gap-1">
+          <div className="mt-3 flex flex-col gap-1 border-t pt-3">
+            <span className="text-sm text-muted-foreground">Hourly rate</span>
             <RateLine
               rate={team.averageHourlyRate}
               caption="per billable hour"
@@ -123,6 +126,8 @@ export function SummaryStrip({
             />
           </div>
         </StatCard>
+
+        <TargetCard lineup={targets} />
       </div>
     </section>
   )

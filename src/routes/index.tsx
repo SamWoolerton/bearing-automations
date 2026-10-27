@@ -188,6 +188,7 @@ function WriteOffPage() {
           <SummaryStrip
             clients={overview.clients}
             focusMember={overview.members.find(m => m.id === member)}
+            targets={overview.targets}
           />
           <OverviewTable
             month={overview.period.key}

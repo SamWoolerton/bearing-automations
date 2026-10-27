@@ -30,12 +30,42 @@ function LegendItem({
   )
 }
 
+function PersonSplit({
+  person,
+  focused,
+}: {
+  person: Tally & { name: string }
+  focused: boolean
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex items-baseline justify-between gap-2 text-xs">
+        <span
+          className={cn(
+            'truncate',
+            focused ? 'font-medium' : 'text-muted-foreground',
+          )}
+        >
+          {person.name}
+        </span>
+        <span className="shrink-0 text-muted-foreground tabular-nums">
+          {formatDuration(person.totalSeconds)} ·{' '}
+          {billableProportionLabel(person)}
+        </span>
+      </div>
+      <SplitBar tally={person} className="h-1" />
+    </div>
+  )
+}
+
 export function TimeCard({
   team,
-  member,
+  people,
+  focusMemberId,
 }: {
   team: Tally
-  member: (Tally & { name: string }) | undefined
+  people: (Tally & { id: string; name: string })[]
+  focusMemberId: string | undefined
 }) {
   return (
     <Card className="col-span-2 py-4">
@@ -65,20 +95,15 @@ export function TimeCard({
           />
         </div>
 
-        {member && (
-          <div className="flex items-center gap-3 border-t pt-3 text-sm">
-            <span className="max-w-32 truncate text-muted-foreground">
-              {member.name}
-            </span>
-            <SplitBar tally={member} className="h-1.5 flex-1" />
-            <span className="font-medium tabular-nums">
-              {billableProportionLabel(member)}
-            </span>
-            <span className="text-muted-foreground tabular-nums">
-              of {formatDuration(member.totalSeconds)}
-            </span>
-          </div>
-        )}
+        <div className="mt-auto grid grid-cols-2 gap-x-5 gap-y-2.5 border-t pt-3">
+          {people.map(person => (
+            <PersonSplit
+              key={person.id}
+              person={person}
+              focused={person.id === focusMemberId}
+            />
+          ))}
+        </div>
       </CardContent>
     </Card>
   )

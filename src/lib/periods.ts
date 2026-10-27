@@ -5,6 +5,8 @@ export const TZ = 'Pacific/Auckland'
 
 export const nowInNZ = () => TZDate.tz(TZ)
 
+export const isoDate = (date: Date) => format(date, 'yyyy-MM-dd')
+
 export function monthPeriod(month: TZDate) {
   return {
     key: format(month, 'yyyy-MM'),
