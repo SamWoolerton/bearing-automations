@@ -3,21 +3,36 @@ import { plural } from '@bearing-agency/utilities/strings'
 
 import type { ReactNode } from 'react'
 
+import type { Currency } from '@/billing/clientConfig'
 import { NZD_PER_UNIT } from '@/billing/clientConfig'
 import type { EarningsSummary, Rated } from '@/billing/earnings'
 import { summariseEarnings } from '@/billing/earnings'
 import type { TargetLineup } from '@/billing/targets'
+import { LegendItem, SegmentedBar } from '@/components/SplitBar'
 import { Card, CardContent } from '@/components/ui/card'
-import { formatDollars } from '@/lib/currency'
+import { formatDollars, formatMoney } from '@/lib/currency'
+import { formatPercent } from '@/lib/percent'
 import { TargetCard } from '@/writeOff/components/TargetCard'
 import { TimeCard } from '@/writeOff/components/TimeCard'
 import type { Overview } from '@/writeOff/overview'
 import { memberTallies, memberTally } from '@/writeOff/overview'
 
-const NZD_NOTE = `NZD at ${Object.entries(NZD_PER_UNIT)
-  .filter(([currency]) => currency !== 'NZD')
-  .map(([currency, rate]) => `${currency} ${rate}`)
-  .join(' · ')}`
+const CURRENCY_COLOURS: Record<Currency, string> = {
+  NZD: 'bg-primary',
+  USD: 'bg-primary/70',
+  AUD: 'bg-primary/45',
+  CAD: 'bg-primary/25',
+}
+
+const countryOf = (currency: Currency) => currency.slice(0, 2)
+
+const formatConversion = ({
+  currency,
+  nativeAmount,
+}: EarningsSummary['billableByCurrency'][number]) =>
+  currency === 'NZD'
+    ? undefined
+    : `from ${formatMoney(nativeAmount, currency)} at ${NZD_PER_UNIT[currency]}`
 
 const VALUE_CLASS = 'text-2xl font-semibold tabular-nums'
 
@@ -78,9 +93,9 @@ export function SummaryStrip({
     (focusMember &&
       mapNullish(
         summariseEarnings(
-          clients.flatMap(({ projects, hourlyRate }) => {
+          clients.flatMap(({ projects, hourlyRate, currency }) => {
             const tally = memberTally(projects, focusMember.id)
-            return tally ? [{ ...tally, hourlyRate }] : []
+            return tally ? [{ ...tally, hourlyRate, currency }] : []
           }),
         ),
         summary => ({ ...summary, name: focusMember.name }),
@@ -113,7 +128,26 @@ export function SummaryStrip({
           <span className={VALUE_CLASS}>
             {formatDollars(team.billableAmount)}
           </span>
-          <span className="mt-1 text-xs text-muted-foreground">{NZD_NOTE}</span>
+          <SegmentedBar
+            className="mt-2"
+            segments={team.billableByCurrency.map(split => ({
+              key: split.currency,
+              colour: CURRENCY_COLOURS[split.currency],
+              value: split.amount,
+              tooltip: `${countryOf(split.currency)} ·${formatDollars(split.amount)} · ${formatPercent((100 * split.amount) / team.billableAmount)}`,
+            }))}
+          />
+          <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+            {team.billableByCurrency.map(split => (
+              <LegendItem
+                key={split.currency}
+                colour={CURRENCY_COLOURS[split.currency]}
+                label={countryOf(split.currency)}
+                value={formatDollars(split.amount)}
+                detail={formatConversion(split)}
+              />
+            ))}
+          </div>
           <div className="mt-3 flex flex-col gap-1 border-t pt-3">
             <span className="text-sm text-muted-foreground">Hourly rate</span>
             <RateLine

@@ -108,7 +108,7 @@ function TargetTooltip({
           {children}
         </span>
       </TooltipTrigger>
-      <TooltipContent variant="card">
+      <TooltipContent>
         <Breakdown title={title} tally={tally} />
       </TooltipContent>
     </Tooltip>

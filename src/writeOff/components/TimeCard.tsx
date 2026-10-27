@@ -1,34 +1,9 @@
 import { cn } from 'cn'
 
-import { SPLIT_COLOURS, SplitBar } from '@/components/SplitBar'
+import { LegendItem, SPLIT_COLOURS, SplitBar } from '@/components/SplitBar'
 import { Card, CardContent } from '@/components/ui/card'
 import type { Tally } from '@/lib/hours'
 import { billableProportionLabel, formatDuration } from '@/lib/hours'
-
-function LegendItem({
-  colour,
-  label,
-  seconds,
-}: {
-  colour: string
-  label: string
-  seconds: number
-}) {
-  return (
-    <span className="flex items-baseline gap-2">
-      <span
-        className={cn(
-          'size-[0.5em] shrink-0 translate-y-[-0.1em] rounded-full',
-          colour,
-        )}
-      />
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium tabular-nums">
-        {formatDuration(seconds)}
-      </span>
-    </span>
-  )
-}
 
 function PersonSplit({
   person,
@@ -86,12 +61,12 @@ export function TimeCard({
           <LegendItem
             colour={SPLIT_COLOURS.billable}
             label="Billable"
-            seconds={team.billableSeconds}
+            value={formatDuration(team.billableSeconds)}
           />
           <LegendItem
             colour={SPLIT_COLOURS.nonBillable}
             label="Non-billable"
-            seconds={team.totalSeconds - team.billableSeconds}
+            value={formatDuration(team.totalSeconds - team.billableSeconds)}
           />
         </div>
 

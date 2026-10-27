@@ -1,6 +1,8 @@
 import { sumBy } from '@bearing-agency/utilities/arrays'
 import { roundTo } from '@bearing-agency/utilities/numbers'
 
+import { formatPercent } from '@/lib/percent'
+
 export const MINUTE_SECONDS = 60
 export const HOUR_SECONDS = 60 * MINUTE_SECONDS
 export const QUARTER_HOUR_SECONDS = 15 * MINUTE_SECONDS
@@ -48,5 +50,5 @@ export const billablePercent = ({ billableSeconds, totalSeconds }: Tally) =>
 
 export function billableProportionLabel(tally: Tally) {
   const percent = billablePercent(tally)
-  return percent === null ? '—' : `${Math.round(percent)}%`
+  return percent === null ? '—' : formatPercent(percent)
 }

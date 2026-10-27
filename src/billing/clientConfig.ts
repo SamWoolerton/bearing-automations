@@ -1,6 +1,6 @@
 import { unique } from '@bearing-agency/utilities/arrays'
 import { assert } from '@bearing-agency/utilities/assertions'
-import { mapNullish } from '@bearing-agency/utilities/nullish'
+import { objectKeys } from '@bearing-agency/utilities/objects'
 
 import { normaliseName, sameName } from '@/lib/names'
 
@@ -11,6 +11,7 @@ export type ClockifyClientConfig = {
 
 export const NZD_PER_UNIT = { NZD: 1, USD: 1.73, AUD: 1.15, CAD: 1.22 }
 export type Currency = keyof typeof NZD_PER_UNIT
+export const CURRENCIES = objectKeys(NZD_PER_UNIT)
 
 export type ClientConfig = {
   clockify: (string | ClockifyClientConfig)[]
@@ -146,11 +147,15 @@ const CLOCKIFY_MAPPINGS = CLIENTS.flatMap(cfg =>
 export const clockifyMappingFor = (clockifyClient: string) =>
   CLOCKIFY_MAPPINGS.find(m => sameName(m.name, clockifyClient))
 
-export const nzdHourlyRateFor = (clockifyClient: string) =>
-  mapNullish(
-    clockifyMappingFor(clockifyClient)?.cfg,
-    cfg => cfg.hourlyRate * NZD_PER_UNIT[cfg.currency],
-  )
+export function nzdRateFor(clockifyClient: string) {
+  const cfg = clockifyMappingFor(clockifyClient)?.cfg
+  return cfg
+    ? {
+        hourlyRate: cfg.hourlyRate * NZD_PER_UNIT[cfg.currency],
+        currency: cfg.currency,
+      }
+    : { hourlyRate: null, currency: null }
+}
 
 const assertNoDuplicateNames = (names: string[], label: string) =>
   assert(

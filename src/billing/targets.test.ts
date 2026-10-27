@@ -60,7 +60,9 @@ describe('tallyByDate', () => {
   })
 
   it('throws when a day has more billable than total time', () => {
-    expect(() => tallyByDate([], dates)).toThrowErrorMatchingInlineSnapshot(`[Error: 2026-10-01 has more billable (18000s) than total (0s) time]`)
+    expect(() => tallyByDate([], dates)).toThrowErrorMatchingInlineSnapshot(
+      `[Error: 2026-10-01 has more billable (18000s) than total (0s) time]`,
+    )
   })
 })
 
@@ -157,6 +159,8 @@ describe('buildTargetLineup', () => {
         billableOnly([['2026-11-01', HOUR_SECONDS]]),
         AFTER_OCTOBER,
       ),
-    ).toThrowErrorMatchingInlineSnapshot(`[Error: Clockify reported time on 2026-11-01, outside October 2026]`)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Clockify reported time on 2026-11-01, outside October 2026]`,
+    )
   })
 })
